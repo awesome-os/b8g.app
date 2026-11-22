@@ -1,0 +1,1203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>B8G Notebook Studio — Live GPU &amp; Arena Telemetry | b8g.app</title>
+  <style>
+    :root {
+      --bg: #07090f;
+      --bg-elev: #0d111b;
+      --bg-card: #111725;
+      --bg-code: #090d16;
+      --border: rgba(148, 163, 184, 0.16);
+      --border-strong: rgba(56, 189, 248, 0.42);
+      --text: #eef2ff;
+      --muted: #94a3b8;
+      --dim: #64748b;
+      --cyan: #38bdf8;
+      --emerald: #34d399;
+      --amber: #fbbf24;
+      --violet: #a78bfa;
+      --rose: #fb7185;
+      --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%;
+      background:
+        radial-gradient(1100px 540px at 12% -10%, rgba(56, 189, 248, 0.11), transparent 62%),
+        radial-gradient(900px 520px at 88% -8%, rgba(167, 139, 250, 0.10), transparent 60%),
+        var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px 22px;
+      background: rgba(7, 9, 15, 0.86);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: #f8fafc;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      transition: border-color 140ms ease, background 140ms ease;
+    }
+    .back-link:hover {
+      border-color: var(--cyan);
+      background: rgba(56, 189, 248, 0.12);
+    }
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-title h1 {
+      font-size: 15.5px;
+      font-weight: 800;
+      letter-spacing: -0.015em;
+      color: #f8fafc;
+    }
+    .pill-tag {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(52, 211, 153, 0.35);
+      background: rgba(52, 211, 153, 0.10);
+      color: var(--emerald);
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    button {
+      font-family: var(--sans);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 7px 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: border-color 140ms ease, background 140ms ease, transform 90ms ease;
+    }
+    button:hover {
+      border-color: var(--cyan);
+      background: rgba(56, 189, 248, 0.12);
+      color: #ffffff;
+    }
+    button:active { transform: translateY(1px); }
+    button.primary {
+      background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+      border-color: #38bdf8;
+      color: #04131f;
+    }
+    button.primary:hover {
+      background: linear-gradient(135deg, #38bdf8, #7dd3fc);
+      color: #04131f;
+    }
+    button.export {
+      background: rgba(167, 139, 250, 0.14);
+      border-color: rgba(167, 139, 250, 0.42);
+      color: #ddd6fe;
+    }
+    button.export:hover {
+      background: rgba(167, 139, 250, 0.24);
+      border-color: var(--violet);
+      color: #ffffff;
+    }
+    button.small {
+      font-size: 11.5px;
+      padding: 4px 10px;
+      border-radius: 7px;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 22px 20px 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .hero-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 16px 20px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(17, 23, 37, 0.92), rgba(11, 15, 25, 0.92));
+      border: 1px solid var(--border);
+    }
+    .hero-copy h2 {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .hero-copy p {
+      font-size: 13px;
+      color: var(--muted);
+      max-width: 660px;
+    }
+    .summary-stats {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .stat-chip {
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: rgba(9, 13, 22, 0.85);
+      border: 1px solid var(--border);
+      min-width: 112px;
+    }
+    .stat-chip .k {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--dim);
+      font-family: var(--mono);
+    }
+    .stat-chip .v {
+      font-size: 14px;
+      font-weight: 800;
+      font-family: var(--mono);
+      color: var(--cyan);
+      margin-top: 2px;
+    }
+    .stat-chip .v.ok { color: var(--emerald); }
+    .cell {
+      border-radius: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+    .cell:focus-within {
+      border-color: var(--border-strong);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.16), 0 16px 36px rgba(0, 0, 0, 0.35);
+    }
+    .cell-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 11px 16px;
+      background: rgba(9, 13, 22, 0.72);
+      border-bottom: 1px solid var(--border);
+    }
+    .cell-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .cell-index {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--cyan);
+      background: rgba(56, 189, 248, 0.10);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      border-radius: 6px;
+      padding: 2px 7px;
+      min-width: 38px;
+      text-align: center;
+    }
+    .cell-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .cell-title {
+      font-size: 13.5px;
+      font-weight: 750;
+      color: #f8fafc;
+    }
+    .cell-sub {
+      font-size: 11.5px;
+      color: var(--muted);
+    }
+    .cell-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .cell-status {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .cell-status.pass {
+      color: var(--emerald);
+      border-color: rgba(52, 211, 153, 0.35);
+      background: rgba(52, 211, 153, 0.10);
+    }
+    .cell-status.err {
+      color: var(--rose);
+      border-color: rgba(251, 113, 133, 0.40);
+      background: rgba(251, 113, 133, 0.12);
+    }
+    .editor-wrap {
+      position: relative;
+      background: var(--bg-code);
+      border-bottom: 1px solid var(--border);
+    }
+    .code-editor {
+      display: block;
+      width: 100%;
+      min-height: 150px;
+      padding: 14px 16px;
+      background: transparent;
+      color: #dbeafe;
+      border: 0;
+      outline: none;
+      resize: vertical;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.55;
+      tab-size: 2;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .editor-hint {
+      position: absolute;
+      right: 12px;
+      bottom: 8px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--dim);
+      pointer-events: none;
+    }
+    .output-area {
+      padding: 14px 16px;
+      background: rgba(13, 17, 27, 0.72);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .output-area.empty {
+      padding: 10px 16px;
+      color: var(--dim);
+      font-family: var(--mono);
+      font-size: 11.5px;
+    }
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+      gap: 10px;
+    }
+    .metric-card {
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: rgba(7, 10, 18, 0.85);
+      border: 1px solid var(--border);
+    }
+    .metric-card .mk {
+      font-family: var(--mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+    .metric-card .mv {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 800;
+      margin-top: 2px;
+      color: var(--cyan);
+    }
+    .metric-card .mv.ok { color: var(--emerald); }
+    .metric-card .mv.warn { color: var(--amber); }
+    .metric-card .mv.violet { color: var(--violet); }
+    .metric-card .mv.err { color: var(--rose); }
+    .canvas-host {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .canvas-host canvas {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #060911;
+    }
+    .log-output {
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.5;
+      color: #cbd5e1;
+      background: rgba(6, 9, 17, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .log-output.err {
+      color: #fecdd3;
+      border-color: rgba(251, 113, 133, 0.45);
+      background: rgba(76, 5, 25, 0.45);
+    }
+    .footer {
+      text-align: center;
+      color: var(--dim);
+      font-size: 12px;
+      font-family: var(--mono);
+      padding-top: 6px;
+    }
+    @media (max-width: 680px) {
+      .topbar { padding: 10px 14px; }
+      .container { padding: 14px 12px 42px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-group">
+      <a class="back-link" href="../index.html">← b8g.app</a>
+      <div class="brand-title">
+        <h1>B8G Notebook Studio</h1>
+        <span class="pill-tag">B8G-Chrome · Zero-CDN</span>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button id="btnRunAll" class="primary">▶ Run All Cells</button>
+      <button id="btnClearAll">Clear Outputs</button>
+      <button id="btnExportReport" class="export">Export Clean HTML Report</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero-strip">
+      <div class="hero-copy">
+        <h2>Interactive Kernel &amp; Telemetry Notebook</h2>
+        <p>Edit any cell and press <strong>Run</strong> (or <strong>Ctrl+Enter</strong>) to execute live JavaScript with real typed-array telemetry rings, S^3 quaternion math, O(Δ) binary delta proofs, and high-DPI canvas visualizations.</p>
+      </div>
+      <div class="summary-stats">
+        <div class="stat-chip">
+          <div class="k">Cells Passed</div>
+          <div class="v ok" id="sumPassed">0 / 4</div>
+        </div>
+        <div class="stat-chip">
+          <div class="k">Total Runtime</div>
+          <div class="v" id="sumTime">0.00 ms</div>
+        </div>
+      </div>
+    </section>
+
+    <div id="notebookMount"></div>
+
+    <footer class="footer">
+      B8G-Chrome Notebook Studio · 100% Self-Contained Offline Execution · Helper APIs: log(), metric(k, v, tone), createCanvas(w, h)
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      var CELLS = [
+        {
+          id: 'arena-ring',
+          title: 'Cell 1 — B8G_ARENA_V1 Binary Telemetry Ring Benchmark',
+          subtitle: '50,000 real Float32Array 64B-aligned ring pushes · exact performance.now() timing · live sparkline',
+          rows: 17,
+          code: [
+            '// B8G_ARENA_V1: 1024 slots x 64 bytes (16 x Float32/Uint32 fields per cache line)',
+            'var SLOTS = 1024;',
+            'var SLOT_FLOATS = 16;',
+            'var PUSHES = 50000;',
+            'var BUCKETS = 100;',
+            'var PER_BUCKET = PUSHES / BUCKETS;',
+            '',
+            'var arena = new ArrayBuffer(SLOTS * SLOT_FLOATS * 4);',
+            'var ringF32 = new Float32Array(arena);',
+            'var ringU32 = new Uint32Array(arena);',
+            'var bucketUs = new Float32Array(BUCKETS);',
+            '',
+            'var cursor = 0;',
+            'var tStart = performance.now();',
+            'for (var b = 0; b < BUCKETS; b++) {',
+            '  var bt0 = performance.now();',
+            '  for (var i = 0; i < PER_BUCKET; i++) {',
+            '    var slot = (cursor & (SLOTS - 1)) * SLOT_FLOATS;',
+            '    ringU32[slot] = cursor;',
+            '    ringF32[slot + 1] = 16.666 + Math.sin(cursor * 0.013) * 0.42;',
+            '    ringF32[slot + 2] = 0.00018 * (i & 31);',
+            '    ringF32[slot + 3] = 1.0;',
+            '    cursor++;',
+            '  }',
+            '  bucketUs[b] = (performance.now() - bt0) * 1000;',
+            '}',
+            'var elapsedMs = Math.max(0.001, performance.now() - tStart);',
+            'var mOps = (PUSHES / elapsedMs) / 1000;',
+            'var nsPerPush = (elapsedMs * 1e6) / PUSHES;',
+            '',
+            'var minUs = 1e9, maxUs = 0, sumUs = 0;',
+            'for (var k = 0; k < BUCKETS; k++) {',
+            '  if (bucketUs[k] < minUs) minUs = bucketUs[k];',
+            '  if (bucketUs[k] > maxUs) maxUs = bucketUs[k];',
+            '  sumUs += bucketUs[k];',
+            '}',
+            'var avgUs = sumUs / BUCKETS;',
+            '',
+            'metric("Ring Pushes", PUSHES.toLocaleString(), "ok");',
+            'metric("Elapsed Time", elapsedMs.toFixed(3) + " ms", "cyan");',
+            'metric("Throughput", mOps.toFixed(2) + " M ops/s", "ok");',
+            'metric("Cost / Push", nsPerPush.toFixed(1) + " ns", "violet");',
+            '',
+            '// Draw live sparkline chart',
+            'var cv = createCanvas(960, 190);',
+            'var ctx = cv.getContext("2d");',
+            'var W = cv.width, H = cv.height;',
+            'var padL = 56, padR = 20, padT = 28, padB = 30;',
+            'var plotW = W - padL - padR, plotH = H - padT - padB;',
+            '',
+            'ctx.fillStyle = "#060911";',
+            'ctx.fillRect(0, 0, W, H);',
+            '',
+            '// Grid lines',
+            'ctx.strokeStyle = "rgba(148,163,184,0.14)";',
+            'ctx.lineWidth = 1;',
+            'for (var g = 0; g <= 4; g++) {',
+            '  var gy = padT + (plotH * g) / 4;',
+            '  ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(W - padR, gy); ctx.stroke();',
+            '}',
+            '',
+            'var span = Math.max(1, maxUs - minUs);',
+            'var grad = ctx.createLinearGradient(0, padT, 0, H - padB);',
+            'grad.addColorStop(0, "rgba(56, 189, 248, 0.36)");',
+            'grad.addColorStop(1, "rgba(56, 189, 248, 0.02)");',
+            '',
+            'ctx.beginPath();',
+            'for (var j = 0; j < BUCKETS; j++) {',
+            '  var x = padL + (j / (BUCKETS - 1)) * plotW;',
+            '  var normY = (bucketUs[j] - minUs) / span;',
+            '  var y = padT + plotH - normY * plotH;',
+            '  if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);',
+            '}',
+            'ctx.lineTo(padL + plotW, padT + plotH);',
+            'ctx.lineTo(padL, padT + plotH);',
+            'ctx.closePath();',
+            'ctx.fillStyle = grad;',
+            'ctx.fill();',
+            '',
+            'ctx.beginPath();',
+            'for (var j2 = 0; j2 < BUCKETS; j2++) {',
+            '  var x2 = padL + (j2 / (BUCKETS - 1)) * plotW;',
+            '  var y2 = padT + plotH - ((bucketUs[j2] - minUs) / span) * plotH;',
+            '  if (j2 === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);',
+            '}',
+            'ctx.strokeStyle = "#38bdf8";',
+            'ctx.lineWidth = 2.2;',
+            'ctx.stroke();',
+            '',
+            '// Average dashed line',
+            'var avgY = padT + plotH - ((avgUs - minUs) / span) * plotH;',
+            'ctx.save();',
+            'ctx.setLineDash([5, 5]);',
+            'ctx.strokeStyle = "#34d399";',
+            'ctx.lineWidth = 1.4;',
+            'ctx.beginPath(); ctx.moveTo(padL, avgY); ctx.lineTo(W - padR, avgY); ctx.stroke();',
+            'ctx.restore();',
+            '',
+            'ctx.fillStyle = "#e2e8f0";',
+            'ctx.font = "bold 12px monospace";',
+            'ctx.fillText("B8G_ARENA_V1 Ring Latency Sparkline (100 buckets x 500 pushes)", padL, 18);',
+            'ctx.fillStyle = "#94a3b8";',
+            'ctx.font = "11px monospace";',
+            'ctx.fillText(maxUs.toFixed(0) + " us", 6, padT + 4);',
+            'ctx.fillText(minUs.toFixed(0) + " us", 6, padT + plotH + 4);',
+            'ctx.fillStyle = "#34d399";',
+            'ctx.fillText("avg " + avgUs.toFixed(1) + " us/500-batch", W - 185, 18);',
+            'ctx.fillStyle = "#64748b";',
+            'ctx.fillText("batch #0", padL, H - 10);',
+            'ctx.fillText("batch #99 (50,000 pushes)", W - 195, H - 10);',
+            '',
+            'log("Arena slab: " + arena.byteLength + " bytes (" + SLOTS + " x 64B slots) | Head cursor: " + cursor);',
+            'log("Last slot frameIndex=" + ringU32[((cursor - 1) & (SLOTS - 1)) * SLOT_FLOATS] + " frameMs=" + ringF32[((cursor - 1) & (SLOTS - 1)) * SLOT_FLOATS + 1].toFixed(3));'
+          ].join('\n')
+        },
+        {
+          id: 's3-quaternion',
+          title: 'Cell 2 — S^3 Unit Quaternion + 3D Gravity Bounce Simulation',
+          subtitle: '120 frames @ 60 Hz · exact ||q|| = 1 +/- 1e-12 invariant proof · live trajectory canvas',
+          rows: 17,
+          code: [
+            '// S^3 Unit Quaternion integration + 3D rigid-body gravity bounce (120 frames)',
+            'var FRAMES = 120;',
+            'var DT = 1 / 60;',
+            'var GRAVITY = -9.81;',
+            'var RESTITUTION = 0.78;',
+            'var RADIUS = 0.35;',
+            '',
+            'var pos = { x: 0, y: 3.4, z: 0 };',
+            'var vel = { x: 2.35, y: 0.9, z: 0.45 };',
+            'var omega = { x: 1.8, y: 4.2, z: -3.1 };',
+            'var q = { x: 0, y: 0, z: 0, w: 1 };',
+            '',
+            'var trail = [];',
+            'var drifts = [];',
+            'var bounces = 0;',
+            'var maxDrift = 0;',
+            '',
+            'for (var f = 0; f < FRAMES; f++) {',
+            '  vel.y += GRAVITY * DT;',
+            '  pos.x += vel.x * DT;',
+            '  pos.y += vel.y * DT;',
+            '  pos.z += vel.z * DT;',
+            '',
+            '  var hit = false;',
+            '  if (pos.y < RADIUS) {',
+            '    pos.y = RADIUS;',
+            '    vel.y = Math.abs(vel.y) * RESTITUTION;',
+            '    vel.x *= 0.96;',
+            '    omega.z = -vel.x / RADIUS;',
+            '    bounces++;',
+            '    hit = true;',
+            '  }',
+            '',
+            '  // Exact exponential map step on S^3: dq = [sin(theta/2)*axis, cos(theta/2)]',
+            '  var wMag = Math.hypot(omega.x, omega.y, omega.z);',
+            '  if (wMag > 1e-12) {',
+            '    var half = 0.5 * wMag * DT;',
+            '    var s = Math.sin(half) / wMag;',
+            '    var c = Math.cos(half);',
+            '    var dx = omega.x * s, dy = omega.y * s, dz = omega.z * s, dw = c;',
+            '    var nx = dw * q.x + dx * q.w + dy * q.z - dz * q.y;',
+            '    var ny = dw * q.y - dx * q.z + dy * q.w + dz * q.x;',
+            '    var nz = dw * q.z + dx * q.y - dy * q.x + dz * q.w;',
+            '    var nw = dw * q.w - dx * q.x - dy * q.y - dz * q.z;',
+            '    var inv = 1 / Math.hypot(nx, ny, nz, nw);',
+            '    q.x = nx * inv; q.y = ny * inv; q.z = nz * inv; q.w = nw * inv;',
+            '  }',
+            '',
+            '  var norm = Math.hypot(q.x, q.y, q.z, q.w);',
+            '  var drift = Math.abs(norm - 1.0);',
+            '  if (drift > maxDrift) maxDrift = drift;',
+            '  drifts.push(drift);',
+            '  trail.push({ x: pos.x, y: pos.y, z: pos.z, qx: q.x, qy: q.y, qz: q.z, qw: q.w, hit: hit });',
+            '}',
+            '',
+            'var invariantOk = maxDrift <= 1e-12;',
+            'metric("Simulated Frames", FRAMES + " (2.00 s)", "cyan");',
+            'metric("Ground Bounces", String(bounces), "violet");',
+            'metric("Max | ||q|| - 1 |", maxDrift.toExponential(2), invariantOk ? "ok" : "err");',
+            'metric("S^3 Invariant", invariantOk ? "PASS (<= 1e-12)" : "FAIL", invariantOk ? "ok" : "err");',
+            '',
+            '// Render live trajectory canvas',
+            'var cv = createCanvas(960, 230);',
+            'var ctx = cv.getContext("2d");',
+            'var W = cv.width, H = cv.height;',
+            'ctx.fillStyle = "#060911";',
+            'ctx.fillRect(0, 0, W, H);',
+            '',
+            'var padL = 52, padR = 24, padT = 30, padB = 34;',
+            'var maxX = Math.max(4.8, trail[trail.length - 1].x + 0.3);',
+            'var maxY = 4.2;',
+            'function sx(x) { return padL + (x / maxX) * (W - padL - padR); }',
+            'function sy(y) { return H - padB - (y / maxY) * (H - padT - padB); }',
+            '',
+            '// Grid + ground plane',
+            'ctx.strokeStyle = "rgba(148,163,184,0.12)";',
+            'ctx.lineWidth = 1;',
+            'for (var gy = 0; gy <= 4; gy++) {',
+            '  var py = sy(gy);',
+            '  ctx.beginPath(); ctx.moveTo(padL, py); ctx.lineTo(W - padR, py); ctx.stroke();',
+            '  ctx.fillStyle = "#64748b"; ctx.font = "11px monospace";',
+            '  ctx.fillText(gy.toFixed(0) + "m", 16, py + 4);',
+            '}',
+            'ctx.strokeStyle = "#34d399";',
+            'ctx.lineWidth = 2;',
+            'ctx.beginPath(); ctx.moveTo(padL, sy(0)); ctx.lineTo(W - padR, sy(0)); ctx.stroke();',
+            '',
+            '// Trajectory curve',
+            'ctx.beginPath();',
+            'for (var i = 0; i < trail.length; i++) {',
+            '  var px = sx(trail[i].x), py2 = sy(trail[i].y);',
+            '  if (i === 0) ctx.moveTo(px, py2); else ctx.lineTo(px, py2);',
+            '}',
+            'ctx.strokeStyle = "#38bdf8";',
+            'ctx.lineWidth = 2.5;',
+            'ctx.stroke();',
+            '',
+            '// Draw sampled rotating body orientations & bounce impacts',
+            'for (var i2 = 0; i2 < trail.length; i2++) {',
+            '  var pt = trail[i2];',
+            '  var cx = sx(pt.x), cy = sy(pt.y);',
+            '  if (pt.hit) {',
+            '    ctx.strokeStyle = "#fbbf24";',
+            '    ctx.lineWidth = 1.8;',
+            '    ctx.beginPath(); ctx.arc(cx, sy(0), 10, Math.PI, 0); ctx.stroke();',
+            '  }',
+            '  if (i2 % 10 === 0 || i2 === trail.length - 1) {',
+            '    var ang = 2 * Math.atan2(pt.qz, pt.qw);',
+            '    ctx.fillStyle = "rgba(167,139,250,0.22)";',
+            '    ctx.strokeStyle = "#a78bfa";',
+            '    ctx.lineWidth = 1.6;',
+            '    ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();',
+            '    ctx.strokeStyle = "#f8fafc";',
+            '    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ang) * 8, cy + Math.sin(ang) * 8); ctx.stroke();',
+            '  }',
+            '}',
+            '',
+            'ctx.fillStyle = "#e2e8f0";',
+            'ctx.font = "bold 12px monospace";',
+            'ctx.fillText("3D Gravity Bounce Trajectory & S^3 Quaternion Orientation Markers (120 frames)", padL, 19);',
+            'ctx.fillStyle = "#34d399";',
+            'ctx.fillText("Ground Plane y=0 | ||q|| = 1 +/- " + maxDrift.toExponential(2), W - 320, 19);',
+            '',
+            'log("Final pos=(" + pos.x.toFixed(2) + ", " + pos.y.toFixed(2) + ", " + pos.z.toFixed(2) + ") | Final quat=(" + q.x.toFixed(4) + ", " + q.y.toFixed(4) + ", " + q.z.toFixed(4) + ", " + q.w.toFixed(4) + ")");',
+            'log("Verified ||q|| = " + Math.hypot(q.x, q.y, q.z, q.w).toFixed(16) + " across all " + FRAMES + " frames.");'
+          ].join('\n')
+        },
+        {
+          id: 'delta-proof',
+          title: 'Cell 3 — O(Δ) Multiplayer State-Delta Proof',
+          subtitle: '500 entities, 5 moving · 16B header + 32B/changed record · exact 98.9% bandwidth savings',
+          rows: 17,
+          code: [
+            '// O(Delta) binary state-delta replication proof (500 entities, 5 active)',
+            'var TOTAL_ENTITIES = 500;',
+            'var MOVING_COUNT = 5;',
+            'var HEADER_BYTES = 16;',
+            'var RECORD_BYTES = 32; // uint32 netId + 7 x float32 (pos xyz + quat xyzw)',
+            'var EPSILON = 1e-4;',
+            '',
+            'var prev = [];',
+            'var curr = [];',
+            'for (var i = 0; i < TOTAL_ENTITIES; i++) {',
+            '  var gx = (i % 25) * 2.0;',
+            '  var gz = Math.floor(i / 25) * 2.0;',
+            '  var base = { id: i + 1, x: gx, y: 0, z: gz, qx: 0, qy: 0, qz: 0, qw: 1 };',
+            '  prev.push(base);',
+            '  curr.push({ id: base.id, x: base.x, y: base.y, z: base.z, qx: 0, qy: 0, qz: 0, qw: 1 });',
+            '}',
+            '',
+            '// Move exactly 5 entities; inject tiny sub-epsilon sensor noise on entity #12 (filtered out)',
+            'var movingIds = [14, 117, 242, 365, 488];',
+            'for (var m = 0; m < MOVING_COUNT; m++) {',
+            '  var idx = movingIds[m];',
+            '  curr[idx].x += 0.45 + m * 0.12;',
+            '  curr[idx].y += 0.18;',
+            '  curr[idx].qy = Math.sin(0.25);',
+            '  curr[idx].qw = Math.cos(0.25);',
+            '}',
+            'curr[12].x += 0.00002; // < EPSILON, stays sleeping',
+            '',
+            'var dirty = [];',
+            'for (var j = 0; j < TOTAL_ENTITIES; j++) {',
+            '  var a = prev[j], b = curr[j];',
+            '  var dp = Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.z - b.z);',
+            '  var dq = Math.abs(a.qx - b.qx) + Math.abs(a.qy - b.qy) + Math.abs(a.qz - b.qz) + Math.abs(a.qw - b.qw);',
+            '  if (dp > EPSILON || dq > EPSILON) dirty.push(b);',
+            '}',
+            '',
+            '// Pack binary O(Delta) packet',
+            'var fullBytes = HEADER_BYTES + TOTAL_ENTITIES * RECORD_BYTES;',
+            'var deltaBytes = HEADER_BYTES + dirty.length * RECORD_BYTES;',
+            'var packet = new ArrayBuffer(deltaBytes);',
+            'var dv = new DataView(packet);',
+            'dv.setUint32(0, 0x42384744, false); // "B8GD"',
+            'dv.setUint32(4, 1, true);           // tick',
+            'dv.setUint32(8, dirty.length, true);',
+            'dv.setUint32(12, 0, true);',
+            'for (var d = 0; d < dirty.length; d++) {',
+            '  var off = HEADER_BYTES + d * RECORD_BYTES;',
+            '  var e = dirty[d];',
+            '  dv.setUint32(off, e.id, true);',
+            '  dv.setFloat32(off + 4, e.x, true);',
+            '  dv.setFloat32(off + 8, e.y, true);',
+            '  dv.setFloat32(off + 12, e.z, true);',
+            '  dv.setFloat32(off + 16, e.qx, true);',
+            '  dv.setFloat32(off + 20, e.qy, true);',
+            '  dv.setFloat32(off + 24, e.qz, true);',
+            '  dv.setFloat32(off + 28, e.qw, true);',
+            '}',
+            '',
+            'var savingsPct = ((1 - deltaBytes / fullBytes) * 100);',
+            'metric("Full Snapshot", fullBytes.toLocaleString() + " B", "warn");',
+            'metric("O(Δ) Delta Packet", deltaBytes.toLocaleString() + " B", "ok");',
+            'metric("Bandwidth Saved", savingsPct.toFixed(1) + "%", "ok");',
+            'metric("Dirty / Sleeping", dirty.length + " / " + (TOTAL_ENTITIES - dirty.length), "cyan");',
+            '',
+            '// Render bandwidth comparison + 500-entity spatial activity map',
+            'var cv = createCanvas(960, 210);',
+            'var ctx = cv.getContext("2d");',
+            'var W = cv.width, H = cv.height;',
+            'ctx.fillStyle = "#060911";',
+            'ctx.fillRect(0, 0, W, H);',
+            '',
+            'ctx.fillStyle = "#e2e8f0"; ctx.font = "bold 12px monospace";',
+            'ctx.fillText("O(Δ) Wire-Format Proof: 500 Entities, 5 Moving (98.9% Reduction)", 20, 22);',
+            '',
+            '// Bar comparison (left)',
+            'ctx.fillStyle = "#94a3b8"; ctx.font = "11px monospace";',
+            'ctx.fillText("Full Snapshot (16,016 B)", 20, 56);',
+            'ctx.fillStyle = "rgba(251, 191, 36, 0.25)"; ctx.fillRect(20, 64, 380, 24);',
+            'ctx.fillStyle = "#fbbf24"; ctx.fillRect(20, 64, 380, 24);',
+            'ctx.fillStyle = "#060911"; ctx.font = "bold 11px monospace"; ctx.fillText("16,016 bytes (500 records)", 30, 80);',
+            '',
+            'ctx.fillStyle = "#94a3b8"; ctx.font = "11px monospace";',
+            'ctx.fillText("O(Δ) Binary Delta (176 B)", 20, 118);',
+            'ctx.fillStyle = "rgba(52, 211, 153, 0.12)"; ctx.fillRect(20, 126, 380, 24);',
+            'var deltaW = Math.max(8, Math.round((deltaBytes / fullBytes) * 380));',
+            'ctx.fillStyle = "#34d399"; ctx.fillRect(20, 126, deltaW, 24);',
+            'ctx.fillStyle = "#34d399"; ctx.font = "bold 11px monospace";',
+            'ctx.fillText("176 bytes (-" + savingsPct.toFixed(1) + "% bandwidth)", 34 + deltaW, 142);',
+            '',
+            'ctx.fillStyle = "#64748b"; ctx.font = "11px monospace";',
+            'ctx.fillText("Header: 16 B (B8GD) | 5 x 32 B records | 495 sleeping = 0 B", 20, 182);',
+            '',
+            '// 25 x 20 entity grid (right)',
+            'var gx0 = 445, gy0 = 40, cell = 19, gap = 2;',
+            'var dirtySet = {};',
+            'for (var s = 0; s < dirty.length; s++) dirtySet[dirty[s].id] = true;',
+            'for (var eIdx = 0; eIdx < TOTAL_ENTITIES; eIdx++) {',
+            '  var col = eIdx % 25, row = Math.floor(eIdx / 25);',
+            '  var rx = gx0 + col * cell, ry = gy0 + row * 7.8;',
+            '  var active = !!dirtySet[eIdx + 1];',
+            '  ctx.fillStyle = active ? "#34d399" : "rgba(56, 189, 248, 0.16)";',
+            '  ctx.fillRect(rx, ry, cell - gap, 5.5);',
+            '}',
+            'ctx.fillStyle = "#94a3b8"; ctx.font = "10.5px monospace";',
+            'ctx.fillText("500-Entity World Grid (green = 5 transmitted, dim = 495 zero-byte sleeping)", gx0, 204);',
+            '',
+            'log("Packet magic=0x" + dv.getUint32(0, false).toString(16).toUpperCase() + " | decoded records=" + dv.getUint32(8, true) + " | wire bytes=" + packet.byteLength);',
+            'log("Full=" + fullBytes + " B vs Delta=" + deltaBytes + " B => " + savingsPct.toFixed(3) + "% bandwidth saved (sub-epsilon jitter on #12 ignored).");'
+          ].join('\n')
+        },
+        {
+          id: 'free-sandbox',
+          title: 'Cell 4 — Free JavaScript Sandbox',
+          subtitle: 'Type any JS and click Run (or Ctrl+Enter) · return values, log(), metric(), and createCanvas() work live',
+          rows: 13,
+          code: [
+            '// Edit this cell freely and click Run (or press Ctrl+Enter)!',
+            'var samples = 240;',
+            'var wave = new Float32Array(samples);',
+            'var peak = 0;',
+            'for (var i = 0; i < samples; i++) {',
+            '  var t = (i / samples) * Math.PI * 6;',
+            '  wave[i] = Math.sin(t) * Math.cos(t * 0.27) + 0.35 * Math.sin(t * 2.5);',
+            '  if (Math.abs(wave[i]) > peak) peak = Math.abs(wave[i]);',
+            '}',
+            '',
+            'metric("Samples", String(samples), "cyan");',
+            'metric("Peak Amplitude", peak.toFixed(4), "violet");',
+            'metric("Sandbox Status", "READY", "ok");',
+            '',
+            'var cv = createCanvas(960, 140);',
+            'var ctx = cv.getContext("2d");',
+            'ctx.fillStyle = "#060911"; ctx.fillRect(0, 0, cv.width, cv.height);',
+            'ctx.strokeStyle = "rgba(148,163,184,0.16)";',
+            'ctx.beginPath(); ctx.moveTo(0, 70); ctx.lineTo(cv.width, 70); ctx.stroke();',
+            'ctx.beginPath();',
+            'for (var j = 0; j < samples; j++) {',
+            '  var x = (j / (samples - 1)) * (cv.width - 40) + 20;',
+            '  var y = 70 - (wave[j] / peak) * 48;',
+            '  if (j === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);',
+            '}',
+            'ctx.strokeStyle = "#a78bfa"; ctx.lineWidth = 2.4; ctx.stroke();',
+            '',
+            'log("Sandbox executed cleanly! Try editing the formula or returning any JS object.");',
+            'return { samples: samples, peak: Number(peak.toFixed(4)), engine: "B8G-Chrome" };'
+          ].join('\n')
+        }
+      ];
+
+      var mount = document.getElementById('notebookMount');
+      var sumPassedEl = document.getElementById('sumPassed');
+      var sumTimeEl = document.getElementById('sumTime');
+      var execCounter = 0;
+      var cellState = {};
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function formatValue(val) {
+        if (val == null) return 'null';
+        if (typeof val === 'string') return val;
+        if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+        try {
+          return JSON.stringify(val, null, 2);
+        } catch (err) {
+          return String(val);
+        }
+      }
+
+      function updateSummary() {
+        var passed = 0;
+        var totalMs = 0;
+        for (var i = 0; i < CELLS.length; i++) {
+          var st = cellState[CELLS[i].id];
+          if (st != null && st.ok) passed++;
+          if (st != null && st.ms > 0) totalMs += st.ms;
+        }
+        sumPassedEl.textContent = passed + ' / ' + CELLS.length;
+        sumTimeEl.textContent = totalMs.toFixed(2) + ' ms';
+      }
+
+      function clearCellOutput(cellId) {
+        var out = document.getElementById('out-' + cellId);
+        var status = document.getElementById('status-' + cellId);
+        var idxBadge = document.getElementById('idx-' + cellId);
+        if (out != null) {
+          out.className = 'output-area empty';
+          out.innerHTML = 'No output yet — click Run or press Ctrl+Enter.';
+        }
+        if (status != null) {
+          status.className = 'cell-status';
+          status.textContent = 'Idle';
+        }
+        if (idxBadge != null) {
+          idxBadge.textContent = '[ ]';
+        }
+        cellState[cellId] = { ok: false, ms: 0, logs: [], metrics: [], canvases: [] };
+        updateSummary();
+      }
+
+      function runCell(cellId) {
+        var editor = document.getElementById('ed-' + cellId);
+        var out = document.getElementById('out-' + cellId);
+        var status = document.getElementById('status-' + cellId);
+        var idxBadge = document.getElementById('idx-' + cellId);
+        if (editor == null || out == null) return;
+
+        execCounter++;
+        idxBadge.textContent = '[' + execCounter + ']';
+        out.className = 'output-area';
+        out.innerHTML = '';
+
+        var metricsRow = document.createElement('div');
+        metricsRow.className = 'metrics-row';
+        var canvasHost = document.createElement('div');
+        canvasHost.className = 'canvas-host';
+        var logs = [];
+        var metricList = [];
+        var canvasList = [];
+
+        function log() {
+          var parts = [];
+          for (var i = 0; i < arguments.length; i++) {
+            parts.push(formatValue(arguments[i]));
+          }
+          logs.push(parts.join(' '));
+        }
+
+        function metric(label, value, tone) {
+          var card = document.createElement('div');
+          card.className = 'metric-card';
+          var mk = document.createElement('div');
+          mk.className = 'mk';
+          mk.textContent = String(label);
+          var mv = document.createElement('div');
+          mv.className = 'mv' + (tone != null ? ' ' + String(tone) : '');
+          mv.textContent = String(value);
+          card.appendChild(mk);
+          card.appendChild(mv);
+          metricsRow.appendChild(card);
+          metricList.push({ label: String(label), value: String(value), tone: tone != null ? String(tone) : 'cyan' });
+        }
+
+        function createCanvas(w, h) {
+          var cv = document.createElement('canvas');
+          cv.width = w != null ? w : 960;
+          cv.height = h != null ? h : 200;
+          canvasHost.appendChild(cv);
+          canvasList.push(cv);
+          return cv;
+        }
+
+        var sandboxConsole = {
+          log: log,
+          info: log,
+          warn: function () {
+            var parts = ['[WARN]'];
+            for (var i = 0; i < arguments.length; i++) parts.push(formatValue(arguments[i]));
+            logs.push(parts.join(' '));
+          },
+          error: function () {
+            var parts = ['[ERROR]'];
+            for (var i = 0; i < arguments.length; i++) parts.push(formatValue(arguments[i]));
+            logs.push(parts.join(' '));
+          }
+        };
+
+        var t0 = performance.now();
+        var ok = true;
+        var errText = '';
+        try {
+          var fn = new Function('log', 'metric', 'createCanvas', 'console', editor.value);
+          var ret = fn(log, metric, createCanvas, sandboxConsole);
+          if (ret != null) {
+            logs.push('=> ' + formatValue(ret));
+          }
+        } catch (err) {
+          ok = false;
+          errText = err != null && err.stack != null ? String(err.stack) : String(err);
+        }
+        var dt = Math.max(0.01, performance.now() - t0);
+
+        if (metricList.length > 0) out.appendChild(metricsRow);
+        if (canvasList.length > 0) out.appendChild(canvasHost);
+        if (logs.length > 0) {
+          var pre = document.createElement('pre');
+          pre.className = 'log-output';
+          pre.textContent = logs.join('\n');
+          out.appendChild(pre);
+        }
+        if (!ok) {
+          var errPre = document.createElement('pre');
+          errPre.className = 'log-output err';
+          errPre.textContent = errText;
+          out.appendChild(errPre);
+        }
+        if (metricList.length === 0 && canvasList.length === 0 && logs.length === 0 && ok) {
+          out.className = 'output-area empty';
+          out.textContent = 'Executed cleanly (no output printed).';
+        }
+
+        status.className = 'cell-status ' + (ok ? 'pass' : 'err');
+        status.textContent = (ok ? 'PASS · ' : 'ERR · ') + dt.toFixed(2) + ' ms';
+        cellState[cellId] = {
+          ok: ok,
+          ms: dt,
+          logs: logs.slice(),
+          metrics: metricList.slice(),
+          canvases: canvasList.slice(),
+          errText: errText
+        };
+        updateSummary();
+      }
+
+      function buildNotebookUi() {
+        mount.innerHTML = '';
+        for (var i = 0; i < CELLS.length; i++) {
+          (function (cell) {
+            var sec = document.createElement('section');
+            sec.className = 'cell';
+            sec.id = 'cell-' + cell.id;
+
+            var header = document.createElement('div');
+            header.className = 'cell-header';
+
+            var meta = document.createElement('div');
+            meta.className = 'cell-meta';
+            meta.innerHTML =
+              '<span class="cell-index" id="idx-' + cell.id + '">[ ]</span>' +
+              '<div class="cell-title-wrap">' +
+                '<div class="cell-title">' + escapeHtml(cell.title) + '</div>' +
+                '<div class="cell-sub">' + escapeHtml(cell.subtitle) + '</div>' +
+              '</div>';
+
+            var actions = document.createElement('div');
+            actions.className = 'cell-actions';
+
+            var status = document.createElement('span');
+            status.className = 'cell-status';
+            status.id = 'status-' + cell.id;
+            status.textContent = 'Idle';
+
+            var btnReset = document.createElement('button');
+            btnReset.className = 'small';
+            btnReset.textContent = 'Reset';
+            btnReset.addEventListener('click', function () {
+              var ed = document.getElementById('ed-' + cell.id);
+              if (ed != null) ed.value = cell.code;
+              runCell(cell.id);
+            });
+
+            var btnRun = document.createElement('button');
+            btnRun.className = 'small primary';
+            btnRun.textContent = '▶ Run';
+            btnRun.addEventListener('click', function () {
+              runCell(cell.id);
+            });
+
+            actions.appendChild(status);
+            actions.appendChild(btnReset);
+            actions.appendChild(btnRun);
+            header.appendChild(meta);
+            header.appendChild(actions);
+
+            var edWrap = document.createElement('div');
+            edWrap.className = 'editor-wrap';
+            var textarea = document.createElement('textarea');
+            textarea.className = 'code-editor';
+            textarea.id = 'ed-' + cell.id;
+            textarea.rows = cell.rows;
+            textarea.spellcheck = false;
+            textarea.value = cell.code;
+            textarea.addEventListener('keydown', function (ev) {
+              if ((ev.ctrlKey || ev.metaKey || ev.shiftKey) && ev.key === 'Enter') {
+                ev.preventDefault();
+                runCell(cell.id);
+              } else if (ev.key === 'Tab') {
+                ev.preventDefault();
+                var start = textarea.selectionStart;
+                var end = textarea.selectionEnd;
+                textarea.value = textarea.value.substring(0, start) + '  ' + textarea.value.substring(end);
+                textarea.selectionStart = textarea.selectionEnd = start + 2;
+              }
+            });
+            var hint = document.createElement('span');
+            hint.className = 'editor-hint';
+            hint.textContent = 'Ctrl+Enter to Run';
+            edWrap.appendChild(textarea);
+            edWrap.appendChild(hint);
+
+            var out = document.createElement('div');
+            out.className = 'output-area empty';
+            out.id = 'out-' + cell.id;
+            out.textContent = 'No output yet — click Run or press Ctrl+Enter.';
+
+            sec.appendChild(header);
+            sec.appendChild(edWrap);
+            sec.appendChild(out);
+            mount.appendChild(sec);
+          })(CELLS[i]);
+        }
+      }
+
+      function exportCleanHtmlReport() {
+        var now = new Date().toISOString();
+        var sections = [];
+        for (var i = 0; i < CELLS.length; i++) {
+          var cell = CELLS[i];
+          var ed = document.getElementById('ed-' + cell.id);
+          var st = cellState[cell.id] != null ? cellState[cell.id] : { ok: false, ms: 0, logs: [], metrics: [], canvases: [], errText: '' };
+          var mHtml = '';
+          if (st.metrics.length > 0) {
+            var mCards = [];
+            for (var m = 0; m < st.metrics.length; m++) {
+              mCards.push(
+                '<div class="m"><div class="mk">' + escapeHtml(st.metrics[m].label) +
+                '</div><div class="mv">' + escapeHtml(st.metrics[m].value) + '</div></div>'
+              );
+            }
+            mHtml = '<div class="metrics">' + mCards.join('') + '</div>';
+          }
+          var imgHtml = '';
+          if (st.canvases.length > 0) {
+            var imgs = [];
+            for (var c = 0; c < st.canvases.length; c++) {
+              imgs.push('<img src="' + st.canvases[c].toDataURL('image/png') + '" alt="Cell visualization" />');
+            }
+            imgHtml = '<div class="viz">' + imgs.join('') + '</div>';
+          }
+          var logHtml = st.logs.length > 0 ? '<pre class="log">' + escapeHtml(st.logs.join('\n')) + '</pre>' : '';
+          var errHtml = st.errText != null && st.errText.length > 0 ? '<pre class="err">' + escapeHtml(st.errText) + '</pre>' : '';
+          sections.push(
+            '<section class="cell">' +
+              '<h2>' + escapeHtml(cell.title) + ' <span class="badge">' + (st.ok ? 'PASS' : 'IDLE/ERR') + ' · ' + st.ms.toFixed(2) + ' ms</span></h2>' +
+              '<pre class="code">' + escapeHtml(ed != null ? ed.value : cell.code) + '</pre>' +
+              mHtml + imgHtml + logHtml + errHtml +
+            '</section>'
+          );
+        }
+
+        var reportDoc =
+          '<!doctype html><html lang="en"><head><meta charset="utf-8" />' +
+          '<meta name="viewport" content="width=device-width,initial-scale=1" />' +
+          '<title>B8G Notebook Report — ' + escapeHtml(now) + '</title>' +
+          '<style>' +
+          'body{margin:0;padding:28px;background:#07090f;color:#eef2ff;font-family:Inter,-apple-system,sans-serif;line-height:1.5}' +
+          '.wrap{max-width:980px;margin:0 auto}h1{font-size:22px;margin:0 0 6px}.meta{color:#94a3b8;font-family:monospace;font-size:12px;margin-bottom:22px}' +
+          '.cell{background:#111725;border:1px solid rgba(148,163,184,.2);border-radius:12px;padding:16px;margin-bottom:18px}' +
+          '.cell h2{font-size:15px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}' +
+          '.badge{font-family:monospace;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(52,211,153,.14);color:#34d399}' +
+          'pre{margin:0 0 12px;padding:12px;border-radius:8px;overflow:auto;font-family:ui-monospace,monospace;font-size:12px;background:#090d16;border:1px solid rgba(148,163,184,.16)}' +
+          '.log{color:#cbd5e1}.err{color:#fecdd3;border-color:rgba(251,113,133,.5)}' +
+          '.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px}' +
+          '.m{background:#070a12;border:1px solid rgba(148,163,184,.16);border-radius:8px;padding:8px 10px}' +
+          '.mk{font-family:monospace;font-size:10px;color:#94a3b8;text-transform:uppercase}.mv{font-family:monospace;font-size:15px;font-weight:800;color:#38bdf8}' +
+          '.viz img{width:100%;height:auto;border-radius:8px;border:1px solid rgba(148,163,184,.2);margin-bottom:12px;display:block}' +
+          '</style></head><body><div class="wrap">' +
+          '<h1>B8G Notebook Studio — Exported Report</h1>' +
+          '<div class="meta">Generated: ' + escapeHtml(now) + ' · Self-Contained Snapshot (Zero External Dependencies)</div>' +
+          sections.join('') +
+          '</div></body></html>';
+
+        var blob = new Blob([reportDoc], { type: 'text/html;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'b8g-notebook-report.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+      }
+
+      document.getElementById('btnRunAll').addEventListener('click', function () {
+        for (var i = 0; i < CELLS.length; i++) runCell(CELLS[i].id);
+      });
+
+      document.getElementById('btnClearAll').addEventListener('click', function () {
+        execCounter = 0;
+        for (var i = 0; i < CELLS.length; i++) clearCellOutput(CELLS[i].id);
+      });
+
+      document.getElementById('btnExportReport').addEventListener('click', exportCleanHtmlReport);
+
+      buildNotebookUi();
+      for (var k = 0; k < CELLS.length; k++) {
+        runCell(CELLS[k].id);
+      }
+    })();
+  </script>
+</body>
+</html>

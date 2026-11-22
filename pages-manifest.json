@@ -1,0 +1,75 @@
+{
+  "schema": "b8g.gh-pages-manifest.v1",
+  "repo": "awesome-os/b8g.app",
+  "cname": "b8g.app",
+  "fileCount": 13,
+  "totalBytes": 4781591,
+  "skippedLargeFiles": [],
+  "files": [
+    {
+      "path": "assets/CesiumMan.glb",
+      "bytes": 438044,
+      "sha256": "b7001eaeea8254bd44773bcd247e78696d94169388fbb2a1800fc69434e777d9"
+    },
+    {
+      "path": "assets/DamagedHelmet.glb",
+      "bytes": 3773916,
+      "sha256": "a1e3b04de97b11de564ce6e53b95f02954a297f0008183ac63a4f5974f6b32d8"
+    },
+    {
+      "path": "assets/Fox.glb",
+      "bytes": 162852,
+      "sha256": "d97044e701822bac5a62696459b27d7b375aada5de8574ed4362edbba94771f7"
+    },
+    {
+      "path": "builder.html",
+      "bytes": 73379,
+      "sha256": "a605fbe43177d1e89760dadaaf4c8ada0476349b67b748b16e9a51cb48620613"
+    },
+    {
+      "path": "builder.mts",
+      "bytes": 74219,
+      "sha256": "3a4f5a21b534ff39f051f7499aa15757b3ebb2150c8fddd47ec68c2193db9e43"
+    },
+    {
+      "path": "games/b8g-notebook.html",
+      "bytes": 47737,
+      "sha256": "9ea3209257fb9451c5ddc0f388b5101db2bf4015a560d5cddc89b6c49199abe1"
+    },
+    {
+      "path": "games/cozy-village.html",
+      "bytes": 9191,
+      "sha256": "0d9e619842057b029c0632488977ebd3dd535c10e67fbe8649726f8d27b86e61"
+    },
+    {
+      "path": "games/holonomic-world.html",
+      "bytes": 54573,
+      "sha256": "caee0d3bd8a8e1080674584935f84aa6304f0114bbecdd3cef13646d9747cacc"
+    },
+    {
+      "path": "games/pbr-studio.html",
+      "bytes": 31268,
+      "sha256": "4c982bb6089ee2fad2a17f844857cbea3325bc0068472ce6090fb152d9f22f71"
+    },
+    {
+      "path": "games/reality-sandbox.html",
+      "bytes": 78068,
+      "sha256": "bd8b34b2f6354dbe76f30179ea6eaff764fe67aae23613be17729905b24f2e7a"
+    },
+    {
+      "path": "games/sky-drift.html",
+      "bytes": 13350,
+      "sha256": "7dd407f76e4eff38554ad0867d5e69a286e014637d18a2465b1c37eb037d3caf"
+    },
+    {
+      "path": "games/world-composer.html",
+      "bytes": 15778,
+      "sha256": "a5b3674246119cb8508f7fc3e58131e8628b89fed7fb7cd3c16bf4053bb63f0d"
+    },
+    {
+      "path": "index.html",
+      "bytes": 9216,
+      "sha256": "8d3743504a6828b14d689127bb5e9f0d1c54657081b7125013202d1e6e34ee66"
+    }
+  ]
+}

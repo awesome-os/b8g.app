@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>b8g.app — Instant Games, Worlds &amp; Apps. Zero Install.</title>
+  <style>
+    :root {
+      --bg: #070b14;
+      --card: #111827;
+      --border: #1f2937;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --gold: #facc15;
+      --green: #4ade80;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(circle at 20% 0%, rgba(56,189,248,0.16), transparent 45%), var(--bg);
+      color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+    }
+    header {
+      max-width: 1120px; margin: 0 auto; padding: 22px 24px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .logo { font-weight: 900; font-size: 1.3rem; letter-spacing: -0.03em; color: #fff; text-decoration: none; }
+    .logo span { color: var(--accent); }
+    .nav { display: flex; gap: 18px; font-size: 0.9rem; }
+    .nav a { color: var(--muted); text-decoration: none; }
+    .nav a:hover { color: #fff; }
+    main { max-width: 1120px; margin: 0 auto; padding: 24px 24px 72px; }
+    .hero { text-align: center; padding: 36px 0 44px; }
+    .hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 900; letter-spacing: -0.03em; line-height: 1.08; margin-bottom: 14px; }
+    .hero p { color: var(--muted); font-size: 1.12rem; max-width: 56ch; margin: 0 auto; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 22px; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 18px; overflow: hidden;
+      display: flex; flex-direction: column; transition: transform 0.18s ease, border-color 0.18s ease;
+      text-decoration: none; color: inherit;
+    }
+    .card:hover { transform: translateY(-4px); border-color: var(--accent); }
+    .thumb {
+      height: 185px; display: flex; align-items: center; justify-content: center;
+      font-size: 3.4rem; position: relative;
+    }
+    .thumb.sky { background: linear-gradient(135deg, #0284c7, #38bdf8 55%, #fde68a); }
+    .thumb.village { background: linear-gradient(135deg, #1e1b4b, #c2410c 60%, #fde047); }
+    .thumb.spatial { background: linear-gradient(135deg, #064e3b, #0284c7 55%, #7e22ce); }
+    .badge {
+      position: absolute; top: 12px; left: 12px;
+      background: rgba(7,11,20,0.75); color: #fff; font-size: 11px; font-weight: 700;
+      padding: 4px 10px; border-radius: 999px; letter-spacing: 0.05em;
+    }
+    .body { padding: 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .body h2 { font-size: 1.25rem; font-weight: 800; }
+    .body p { color: var(--muted); font-size: 0.94rem; flex: 1; }
+    .play {
+      margin-top: 10px; display: inline-flex; align-items: center; justify-content: center;
+      background: #fff; color: #070b14; font-weight: 800; font-size: 0.9rem;
+      padding: 10px 16px; border-radius: 10px;
+    }
+    footer {
+      max-width: 1120px; margin: 0 auto; padding: 24px; border-top: 1px solid var(--border);
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+      color: var(--muted); font-size: 0.85rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="logo" href="index.html">b8g<span>.app</span></a>
+    <nav class="nav">
+      <a href="./builder.html">Vibe-to-Verified Studio</a>
+      <a href="/">Awesome-OS (Tech)</a>
+      <a href="/kids/index.html">Kids Book</a>
+      <a href="/demos/os-desktop.html">OS Desktop</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="hero">
+      <h1>Instant Games &amp; Worlds.<br />Zero Install.</h1>
+      <p>Click and play immediately in 60 FPS on any desktop, phone, or Smart TV — no app store, no 4 GB download, no login wall.</p>
+    </div>
+
+    <div class="grid">
+      <a class="card" href="./builder.html">
+        <div class="thumb" style="background:linear-gradient(135deg,#050811,#0ea5e9 45%,#10b981 95%)">
+          <span class="badge">NEW · CONSUMER APP BUILDER · &lt; 10 MS LOOP</span>
+          🛠️
+        </div>
+        <div class="body">
+          <h2>B8G Vibe-to-Verified Studio</h2>
+          <p>Turn plain-English ideas into verified, ready-to-deploy web apps offline — with instant JS/HTML/link/secret checks, 1-click Auto-Fix repair loops, and live sandbox preview.</p>
+          <span class="play">Open Vibe-to-Verified Studio →</span>
+        </div>
+      </a>
+
+      <a class="card" href="games/reality-sandbox.html">
+        <div class="thumb" style="background:linear-gradient(135deg,#070b14,#0284c7 45%,#f59e0b 90%)">
+          <span class="badge">FLAGSHIP · PBR + SHADOWS + PHYSICS + SCRIPTING</span>
+          ⚡
+        </div>
+        <div class="body">
+          <h2>3D Reality Sandbox (Live Scriptable)</h2>
+          <p>Real GPU WebGL2 Cook-Torrance PBR, 1024×1024 PCF soft shadows, rigged .glb models, live 3D collision physics, spatial Web Audio, and an in-browser live script editor!</p>
+          <span class="play">Launch Reality Sandbox →</span>
+        </div>
+      </a>
+
+      <a class="card" href="games/b8g-notebook.html">
+        <div class="thumb" style="background:linear-gradient(135deg,#0b1120,#312e81 50%,#10b981 95%)">
+          <span class="badge">LIVE NOTEBOOK STUDIO · ZERO-SERIALIZATION</span>
+          📓
+        </div>
+        <div class="body">
+          <h2>B8G Live Notebook Studio</h2>
+          <p>Run real binary telemetry rings (50k pushes in ~2 ms), S³ quaternion gravity sims, and O(Δ) multiplayer proofs right in your browser — and export clean HTML reports.</p>
+          <span class="play">Open Notebook Studio →</span>
+        </div>
+      </a>
+
+      <a class="card" href="games/pbr-studio.html">
+        <div class="thumb" style="background:linear-gradient(135deg,#090d1a,#1e3a8a 45%,#f59e0b 95%)">
+          <span class="badge">REAL GPU PBR · WEBGL2 GLSL 300</span>
+          🪖
+        </div>
+        <div class="body">
+          <h2>Real GPU PBR 3D Studio</h2>
+          <p>Real photorealistic metallic/roughness PBR, normal maps, ACES tone-mapping, and live skeletal animation (DamagedHelmet, rigged CesiumMan &amp; Fox — zero Three.js).</p>
+          <span class="play">Launch Real GPU PBR →</span>
+        </div>
+      </a>
+
+      <a class="card" href="games/world-composer.html">
+        <div class="thumb" style="background:linear-gradient(135deg,#1e1b4b,#2563eb 50%,#4ade80)">
+          <span class="badge">KIDS 3D BUILDER · CC0 GLB READY</span>
+          🏗️
+        </div>
+        <div class="body">
+          <h2>World Composer — Build Your Island</h2>
+          <p>Click to build 3D towns, cars, towers, and heroes — or drag-and-drop any free CC0 .glb model (Kenney / Quaternius / KayKit) right onto the island!</p>
+          <span class="play">Start Building →</span>
+        </div>
+      </a>
+
+      <a class="card" href="games/holonomic-world.html">
+        <div class="thumb" style="background:linear-gradient(135deg,#0f172a,#0284c7 45%,#f97316 85%,#fde047)">
+          <span class="badge">OPEN-WORLD STREAMING · 60 FPS</span>
+          🚤
+        </div>
+        <div class="body">
+          <h2>Holonomic Coast — Open World</h2>
+          <p>Cruise an endless sunset archipelago with neon skylines, islands, bridges, and live predictive sector streaming (press Tab for Engine X-Ray).</p>
+          <span class="play">Launch World →</span>
+        </div>
+      </a>
+
+      <a class="card" href="games/sky-drift.html">
+        <div class="thumb sky">
+          <span class="badge">PLAYABLE ARCADE · 60 FPS</span>
+          ✈️
+        </div>
+        <div class="body">
+          <h2>Sky Drift — Alpine Glider</h2>
+          <p>Soar through painted mountain valleys, sunlit pine forests, and golden sky rings. Mouse, touch, or keyboard controls.</p>
+          <span class="play">Play Now →</span>
+        </div>
+      </a>
+
+      <a class="card" href="games/cozy-village.html">
+        <div class="thumb village">
+          <span class="badge">INTERACTIVE 3D DIORAMA</span>
+          🏔️
+        </div>
+        <div class="body">
+          <h2>Cozy Village — Living Island</h2>
+          <p>Switch between Morning, Golden Sunset, and Starry Night — and click anywhere to launch glowing sky lanterns over the waterfall.</p>
+          <span class="play">Explore Island →</span>
+        </div>
+      </a>
+
+      <a class="card" href="/demos/asog-4dgs.html">
+        <div class="thumb spatial">
+          <span class="badge">4D SPATIAL CAPTURE</span>
+          ✨
+        </div>
+        <div class="body">
+          <h2>4D Park Walk — Spatial Clip</h2>
+          <p>Orbit a live 4D Gaussian scene in 3D space and scrub backward or forward through time.</p>
+          <span class="play">Open 4D Scene →</span>
+        </div>
+      </a>
+    </div>
+  </main>
+
+  <footer>
+    <div>b8g.app — Instant Web &amp; Smart-TV Experiences</div>
+    <div>Powered by <a href="/">Awesome-OS</a></div>
+  </footer>
+</body>
+</html>

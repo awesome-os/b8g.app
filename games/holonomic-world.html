@@ -1,0 +1,1492 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sunburst Archipelago — Open-World Cruiser | b8g.app</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      background: #0b1024;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #f8fafc;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    canvas#world {
+      display: block; width: 100%; height: 100%;
+      cursor: crosshair;
+    }
+
+    /* Minimal Top HUD */
+    .hud-top {
+      position: fixed; top: 16px; left: 16px; right: 16px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      pointer-events: none; z-index: 10;
+      gap: 12px;
+    }
+    .hud-left, .hud-right {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .pill {
+      pointer-events: auto;
+      background: rgba(11, 16, 36, 0.68);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 14px;
+      padding: 10px 15px;
+      color: #f8fafc;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+    }
+    .back {
+      text-decoration: none; color: #f8fafc; font-weight: 700; font-size: 13px;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: color 0.15s ease;
+    }
+    .back:hover { color: #38bdf8; }
+
+    .xray-btn {
+      pointer-events: auto;
+      appearance: none;
+      background: rgba(11, 16, 36, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 14px;
+      padding: 10px 14px;
+      color: #e0f2fe;
+      font: 600 13px/1 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      cursor: pointer;
+      display: inline-flex; align-items: center; gap: 8px;
+      box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+      transition: all 0.18s ease;
+    }
+    .xray-btn:hover {
+      background: rgba(14, 116, 144, 0.45);
+      border-color: rgba(56, 189, 248, 0.75);
+      transform: translateY(-1px);
+    }
+    .xray-btn.active {
+      background: rgba(14, 165, 233, 0.28);
+      border-color: #38bdf8;
+      color: #ffffff;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.32);
+    }
+    .xray-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #94a3b8;
+      transition: background 0.18s ease, box-shadow 0.18s ease;
+    }
+    .xray-btn.active .xray-dot {
+      background: #22c55e;
+      box-shadow: 0 0 10px #22c55e;
+    }
+    .kbd {
+      font-size: 11px; font-weight: 700;
+      padding: 2px 6px; border-radius: 6px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      letter-spacing: 0.03em;
+    }
+
+    .stat-group {
+      display: flex; align-items: center; gap: 18px;
+    }
+    .stat-block { text-align: right; }
+    .stat-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em;
+      color: rgba(226, 232, 240, 0.72); font-weight: 600;
+    }
+    .stat-val {
+      font-size: 22px; font-weight: 800; letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+    .stat-val.gold { color: #fde047; }
+    .stat-val.cyan { color: #38bdf8; }
+    .stat-unit { font-size: 11px; font-weight: 600; opacity: 0.72; margin-left: 2px; }
+
+    /* Engine X-Ray HUD Panel */
+    .xray-panel {
+      position: fixed; top: 76px; right: 16px; width: 292px;
+      background: rgba(9, 13, 28, 0.84);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(56, 189, 248, 0.36);
+      border-radius: 16px;
+      padding: 14px;
+      z-index: 15;
+      box-shadow: 0 18px 46px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      transform: translateX(330px);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+    }
+    .xray-panel.open {
+      transform: translateX(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .xray-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 10px;
+    }
+    .xray-title {
+      font-size: 12px; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #38bdf8;
+    }
+    .xray-badge {
+      font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px;
+      background: rgba(34, 197, 94, 0.16); color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.36);
+    }
+    .radar-wrap {
+      position: relative; width: 100%; aspect-ratio: 1 / 1;
+      background: rgba(4, 8, 20, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      border-radius: 12px; overflow: hidden;
+      margin-bottom: 10px;
+    }
+    canvas#radar { display: block; width: 100%; height: 100%; }
+
+    .legend {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px;
+      margin-bottom: 12px;
+      font-size: 11px; color: #cbd5e1;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .swatch { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+    .sw-t1 { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.7); }
+    .sw-t2 { background: #22d3ee; box-shadow: 0 0 6px rgba(34, 211, 238, 0.7); }
+    .sw-t3 { background: #64748b; }
+    .sw-purge { background: #f43f5e; box-shadow: 0 0 6px rgba(244, 63, 94, 0.7); }
+
+    .metrics {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .metric {
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 10px; padding: 8px 10px;
+    }
+    .metric-k {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: #94a3b8; margin-bottom: 2px;
+    }
+    .metric-v {
+      font-size: 16px; font-weight: 800; color: #f8fafc;
+      font-variant-numeric: tabular-nums;
+    }
+    .metric-v.ok { color: #4ade80; }
+    .metric-v.accent { color: #38bdf8; }
+    .metric-v.warn { color: #fb7185; }
+
+    /* Bottom Controls Hint */
+    .controls-tip {
+      position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+      background: rgba(11, 16, 36, 0.68);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      padding: 8px 18px;
+      font-size: 12.5px; color: #e2e8f0;
+      display: flex; align-items: center; gap: 12px;
+      white-space: nowrap;
+      pointer-events: none; z-index: 10;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+    .controls-tip strong { color: #fde047; font-weight: 700; }
+
+    /* Ring Collected Toast */
+    .toast {
+      position: fixed; top: 88px; left: 50%; transform: translateX(-50%) translateY(-10px);
+      background: linear-gradient(135deg, rgba(250, 204, 21, 0.92), rgba(249, 115, 22, 0.92));
+      color: #0f172a; font-weight: 800; font-size: 14px; letter-spacing: 0.02em;
+      padding: 8px 18px; border-radius: 999px;
+      box-shadow: 0 12px 28px rgba(249, 115, 22, 0.38);
+      opacity: 0; pointer-events: none; z-index: 12;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 680px) {
+      .controls-tip { font-size: 11px; padding: 7px 12px; gap: 8px; }
+      .xray-panel { width: 256px; top: 72px; right: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="world"></canvas>
+
+  <div class="hud-top">
+    <div class="hud-left">
+      <div class="pill"><a class="back" href="../index.html">← b8g.app</a></div>
+      <button id="xrayToggle" class="xray-btn" type="button" aria-pressed="false">
+        <span class="xray-dot"></span>
+        <span>Engine X-Ray</span>
+        <span class="kbd">Tab</span>
+      </button>
+    </div>
+
+    <div class="hud-right">
+      <div class="pill stat-group">
+        <div class="stat-block">
+          <div class="stat-label">Speed</div>
+          <div class="stat-val cyan"><span id="speedVal">0</span><span class="stat-unit">kn</span></div>
+        </div>
+        <div class="stat-block">
+          <div class="stat-label">Rings</div>
+          <div class="stat-val gold" id="scoreVal">0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">+1 Checkpoint Ring · Boost!</div>
+
+  <aside id="xrayPanel" class="xray-panel" aria-hidden="true">
+    <div class="xray-header">
+      <div class="xray-title">Streaming X-Ray</div>
+      <div class="xray-badge">O(1) SLAB POOL</div>
+    </div>
+    <div class="radar-wrap">
+      <canvas id="radar" width="260" height="260"></canvas>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><span class="swatch sw-t1"></span>Tier 1 Active</div>
+      <div class="legend-item"><span class="swatch sw-t2"></span>Tier 2 Prefetch</div>
+      <div class="legend-item"><span class="swatch sw-t3"></span>Tier 3 Horizon</div>
+      <div class="legend-item"><span class="swatch sw-purge"></span>O(1) Purged</div>
+    </div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-k">Frame Rate</div>
+        <div class="metric-v ok" id="fpsVal">60 FPS</div>
+      </div>
+      <div class="metric">
+        <div class="metric-k">Active Entities</div>
+        <div class="metric-v accent" id="entVal">0</div>
+      </div>
+      <div class="metric">
+        <div class="metric-k">Sectors (T1/T2/T3)</div>
+        <div class="metric-v" id="secVal">0/0/0</div>
+      </div>
+      <div class="metric">
+        <div class="metric-k">O(1) Purges</div>
+        <div class="metric-v warn" id="purgeVal">0</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="controls-tip">
+    <span><strong>W A S D</strong> / <strong>Arrows</strong> Steer</span>
+    <span>·</span>
+    <span><strong>Mouse</strong> Look</span>
+    <span>·</span>
+    <span><strong>Shift / Space</strong> Boost</span>
+    <span>·</span>
+    <span><strong>Tab</strong> Engine X-Ray</span>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var canvas = document.getElementById('world');
+      var ctx = canvas.getContext('2d', { alpha: false });
+      var radarCanvas = document.getElementById('radar');
+      var rctx = radarCanvas.getContext('2d');
+
+      var speedEl = document.getElementById('speedVal');
+      var scoreEl = document.getElementById('scoreVal');
+      var toastEl = document.getElementById('toast');
+      var xrayBtn = document.getElementById('xrayToggle');
+      var xrayPanel = document.getElementById('xrayPanel');
+      var fpsEl = document.getElementById('fpsVal');
+      var entEl = document.getElementById('entVal');
+      var secEl = document.getElementById('secVal');
+      var purgeEl = document.getElementById('purgeVal');
+
+      var W = 0, H = 0, DPR = 1;
+      function resize() {
+        DPR = Math.min(2, window.devicePixelRatio || 1);
+        W = canvas.width = Math.floor(window.innerWidth * DPR);
+        H = canvas.height = Math.floor(window.innerHeight * DPR);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      // ---------------------------------------------------------------------
+      // Audio Chime (synthesized Web Audio, zero external assets)
+      // ---------------------------------------------------------------------
+      var audioCtx = null;
+      function playRingChime() {
+        try {
+          if (!audioCtx) {
+            var AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            audioCtx = new AC();
+          }
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          var now = audioCtx.currentTime;
+          var freqs = [587.33, 880, 1174.66];
+          for (var i = 0; i < freqs.length; i++) {
+            var osc = audioCtx.createOscillator();
+            var gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freqs[i], now + i * 0.045);
+            gain.gain.setValueAtTime(0.001, now + i * 0.045);
+            gain.gain.exponentialRampToValueAtTime(0.08, now + i * 0.045 + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.045 + 0.34);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + i * 0.045);
+            osc.stop(now + i * 0.045 + 0.36);
+          }
+        } catch (_e) {
+          // Ignore audio restrictions silently
+        }
+      }
+
+      // ---------------------------------------------------------------------
+      // Engine X-Ray Toggle
+      // ---------------------------------------------------------------------
+      var xrayOpen = false;
+      function toggleXray() {
+        xrayOpen = !xrayOpen;
+        xrayPanel.classList.toggle('open', xrayOpen);
+        xrayPanel.setAttribute('aria-hidden', xrayOpen ? 'false' : 'true');
+        xrayBtn.classList.toggle('active', xrayOpen);
+        xrayBtn.setAttribute('aria-pressed', xrayOpen ? 'true' : 'false');
+      }
+      xrayBtn.addEventListener('click', function () {
+        toggleXray();
+        xrayBtn.blur();
+      });
+
+      // ---------------------------------------------------------------------
+      // Deterministic PRNG & World Sector Streaming Engine
+      // ---------------------------------------------------------------------
+      var SECTOR_SIZE = 240;
+      var BUBBLE_RADIUS = 3; // 7x7 candidate grid around player sector
+
+      function hash2D(ix, iz, salt) {
+        var h = (ix * 374761393 + iz * 668265263 + (salt || 0) * 1442695041) | 0;
+        h = Math.imul(h ^ (h >>> 13), 1274126177);
+        h = h ^ (h >>> 16);
+        return (h >>> 0) / 4294967296;
+      }
+
+      function sectorKey(sx, sz) {
+        return sx + ',' + sz;
+      }
+
+      // Active streamed sectors: Map<key, Sector>
+      var sectors = new Map();
+      // Recently purged sectors for O(1) red flash on radar: Map<key, { sx, sz, ttl }>
+      var purgedFlashes = new Map();
+      var totalPurges = 0;
+      var collectedRings = new Set();
+
+      // Fixed-size particle pool (zero GC churn)
+      var particles = [];
+      for (var p = 0; p < 120; p++) {
+        particles.push({ active: false, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, life: 0, maxLife: 1, color: '#fde047', size: 4 });
+      }
+      var particleCursor = 0;
+      function spawnBurst(x, y, z, color, count) {
+        for (var i = 0; i < count; i++) {
+          var pt = particles[particleCursor];
+          particleCursor = (particleCursor + 1) % particles.length;
+          var ang = (i / count) * Math.PI * 2 + Math.random() * 0.5;
+          var spd = 16 + Math.random() * 34;
+          pt.active = true;
+          pt.x = x; pt.y = y; pt.z = z;
+          pt.vx = Math.cos(ang) * spd;
+          pt.vy = 8 + Math.random() * 24;
+          pt.vz = Math.sin(ang) * spd;
+          pt.life = 0;
+          pt.maxLife = 0.55 + Math.random() * 0.4;
+          pt.color = color;
+          pt.size = 3 + Math.random() * 4;
+        }
+      }
+
+      function generateSector(sx, sz, tier) {
+        var cx = (sx + 0.5) * SECTOR_SIZE;
+        var cz = (sz + 0.5) * SECTOR_SIZE;
+        var r0 = hash2D(sx, sz, 1);
+        var r1 = hash2D(sx, sz, 2);
+        var r2 = hash2D(sx, sz, 3);
+        var r3 = hash2D(sx, sz, 4);
+
+        var entities = [];
+        var isOrigin = (sx === 0 && sz === 0);
+        var isStartLane = (sx === 0 && (sz === 1 || sz === 2));
+
+        // 1. Islands (Coastal City Skyline OR Tropical Palm/Pine Island)
+        if (!isOrigin && r0 > 0.24) {
+          var offX = (r1 - 0.5) * (SECTOR_SIZE * 0.42);
+          var offZ = (r2 - 0.5) * (SECTOR_SIZE * 0.42);
+          // Keep the initial forward lane open for the cruiser
+          if (isStartLane && Math.abs(offX) < 42) {
+            offX = offX >= 0 ? 64 : -64;
+          }
+          var ix = cx + offX;
+          var iz = cz + offZ;
+          var isCity = r3 > 0.52;
+          var radius = isCity ? (36 + r1 * 22) : (28 + r2 * 24);
+          var height = isCity ? (8 + r3 * 5) : (10 + r0 * 14);
+
+          var buildings = [];
+          var trees = [];
+          if (isCity) {
+            var bCount = 5 + Math.floor(hash2D(sx, sz, 11) * 6);
+            var neonPalette = ['#f472b6', '#38bdf8', '#fde047', '#fb7185', '#22d3ee'];
+            for (var b = 0; b < bCount; b++) {
+              var ba = (b / bCount) * Math.PI * 2 + hash2D(sx, sz, 20 + b) * 0.8;
+              var bd = radius * (0.12 + hash2D(sx, sz, 40 + b) * 0.54);
+              var bw = 8 + hash2D(sx, sz, 60 + b) * 11;
+              var bh = 22 + hash2D(sx, sz, 80 + b) * 58;
+              buildings.push({
+                dx: Math.cos(ba) * bd,
+                dz: Math.sin(ba) * bd,
+                w: bw,
+                h: bh,
+                neon: neonPalette[b % neonPalette.length],
+                tone: Math.floor(hash2D(sx, sz, 100 + b) * 3)
+              });
+            }
+          } else {
+            var tCount = 5 + Math.floor(hash2D(sx, sz, 13) * 7);
+            var isPalm = hash2D(sx, sz, 17) > 0.42;
+            for (var t = 0; t < tCount; t++) {
+              var ta = (t / tCount) * Math.PI * 2 + hash2D(sx, sz, 120 + t);
+              var td = radius * (0.16 + hash2D(sx, sz, 140 + t) * 0.56);
+              trees.push({
+                dx: Math.cos(ta) * td,
+                dz: Math.sin(ta) * td,
+                h: 11 + hash2D(sx, sz, 160 + t) * 11,
+                lean: (hash2D(sx, sz, 180 + t) - 0.5) * 6,
+                palm: isPalm
+              });
+            }
+          }
+
+          entities.push({
+            kind: isCity ? 'city' : 'island',
+            x: ix,
+            y: 0,
+            z: iz,
+            radius: radius,
+            height: height,
+            buildings: buildings,
+            trees: trees
+          });
+        }
+
+        // 2. Coastal Suspension Bridge spanning open water channels
+        if (!isOrigin && r0 <= 0.24 && r3 > 0.35) {
+          var alongX = r1 > 0.5;
+          entities.push({
+            kind: 'bridge',
+            x: cx,
+            y: 0,
+            z: cz,
+            span: 135,
+            pylonH: 36,
+            alongX: alongX
+          });
+        }
+
+        // 3. Floating Checkpoint Rings (guaranteed in early lane + scattered across archipelago)
+        var spawnRing = isStartLane || (r2 > 0.48 && !isOrigin);
+        if (spawnRing) {
+          var rx = isStartLane ? (sz === 1 ? 0 : 18) : (cx + (r3 - 0.5) * 110);
+          var rz = isStartLane ? (cz - 40) : (cz + (r0 - 0.5) * 110);
+          var ringId = sx + ':' + sz;
+          entities.push({
+            kind: 'ring',
+            id: ringId,
+            x: rx,
+            y: 12.5,
+            z: rz,
+            radius: 11,
+            phase: r1 * Math.PI * 2,
+            collected: collectedRings.has(ringId)
+          });
+        }
+
+        // 4. Floating Neon Buoys for extra sense of scale & speed
+        var buoyCount = 2;
+        for (var u = 0; u < buoyCount; u++) {
+          var bx = cx + (hash2D(sx, sz, 210 + u) - 0.5) * (SECTOR_SIZE * 0.85);
+          var bz = cz + (hash2D(sx, sz, 230 + u) - 0.5) * (SECTOR_SIZE * 0.85);
+          entities.push({
+            kind: 'buoy',
+            x: bx,
+            y: 0,
+            z: bz,
+            color: u === 0 ? '#38bdf8' : '#f472b6',
+            phase: hash2D(sx, sz, 250 + u) * 6.28
+          });
+        }
+
+        return {
+          sx: sx,
+          sz: sz,
+          key: sectorKey(sx, sz),
+          tier: tier,
+          entities: entities
+        };
+      }
+
+      function updateStreamingBubble(px, pz, vx, vz, dt) {
+        var csx = Math.floor(px / SECTOR_SIZE);
+        var csz = Math.floor(pz / SECTOR_SIZE);
+        var speed = Math.hypot(vx, vz);
+        var dirX = speed > 2 ? vx / speed : Math.sin(craft.yaw);
+        var dirZ = speed > 2 ? vz / speed : Math.cos(craft.yaw);
+
+        // Predictive lookahead offset in sector coordinates
+        var lookDist = Math.min(1.6, speed / 95);
+        var desired = new Map();
+
+        for (var dx = -BUBBLE_RADIUS; dx <= BUBBLE_RADIUS; dx++) {
+          for (var dz = -BUBBLE_RADIUS; dz <= BUBBLE_RADIUS; dz++) {
+            var dist = Math.hypot(dx, dz);
+            if (dist > BUBBLE_RADIUS + 0.45) continue;
+
+            var sx = csx + dx;
+            var sz = csz + dz;
+            var key = sectorKey(sx, sz);
+
+            // Dot product with velocity vector for predictive prefetching
+            var dot = dist > 0.01 ? (dx * dirX + dz * dirZ) / dist : 1;
+            var aheadDist = Math.hypot(dx - dirX * lookDist, dz - dirZ * lookDist);
+
+            var tier = 3;
+            if (dist <= 1.45) {
+              tier = 1; // Active full-detail simulation
+            } else if (dot > 0.28 && aheadDist <= 2.25) {
+              tier = 2; // Predictive velocity-vector prefetch ahead of craft
+            } else {
+              tier = 3; // Horizon imposter ring
+            }
+            desired.set(key, { sx: sx, sz: sz, tier: tier });
+          }
+        }
+
+        // O(1) Purge sectors that fell outside the bubble
+        var toDelete = [];
+        sectors.forEach(function (sec, key) {
+          if (!desired.has(key)) {
+            toDelete.push(sec);
+          }
+        });
+        for (var i = 0; i < toDelete.length; i++) {
+          var dead = toDelete[i];
+          sectors.delete(dead.key);
+          totalPurges++;
+          purgedFlashes.set(dead.key, { sx: dead.sx, sz: dead.sz, ttl: 1.35 });
+        }
+
+        // Hydrate / promote desired sectors
+        desired.forEach(function (info, key) {
+          var existing = sectors.get(key);
+          if (existing) {
+            existing.tier = info.tier;
+          } else {
+            sectors.set(key, generateSector(info.sx, info.sz, info.tier));
+          }
+        });
+
+        // Decay O(1) purge flashes
+        purgedFlashes.forEach(function (fl, key) {
+          fl.ttl -= dt;
+          if (fl.ttl <= 0) purgedFlashes.delete(key);
+        });
+      }
+
+      // ---------------------------------------------------------------------
+      // Player Hover-Cruiser State & Input
+      // ---------------------------------------------------------------------
+      var craft = {
+        x: 0,
+        y: 3.4,
+        z: 30,
+        vx: 0,
+        vz: 46,
+        yaw: 0,
+        speed: 46,
+        bank: 0,
+        pitch: 0,
+        boost: 0,
+        hoverPhase: 0
+      };
+
+      var cam = {
+        lookYaw: 0,
+        lookPitch: 0.08,
+        targetLookYaw: 0,
+        targetLookPitch: 0.08
+      };
+
+      var keys = {};
+      var score = 0;
+      var toastTimer = 0;
+      var wakeTrail = [];
+      for (var w = 0; w < 38; w++) {
+        wakeTrail.push({ x: craft.x, z: craft.z - w * 1.4, spread: 3.2 + w * 0.25, alpha: 0 });
+      }
+
+      window.addEventListener('keydown', function (e) {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          toggleXray();
+          return;
+        }
+        keys[e.code] = true;
+      });
+      window.addEventListener('keyup', function (e) {
+        keys[e.code] = false;
+      });
+
+      // Smooth mouse look (subtle free-look around craft, no forced pointer lock)
+      window.addEventListener('pointermove', function (e) {
+        var nx = (e.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
+        var ny = (e.clientY / Math.max(1, window.innerHeight) - 0.5) * 2;
+        cam.targetLookYaw = nx * 0.55;
+        cam.targetLookPitch = 0.08 + ny * 0.22;
+      });
+      window.addEventListener('pointerleave', function () {
+        cam.targetLookYaw = 0;
+        cam.targetLookPitch = 0.08;
+      });
+
+      function showToast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        toastTimer = 1.6;
+      }
+
+      // ---------------------------------------------------------------------
+      // 3D Projection Helpers
+      // ---------------------------------------------------------------------
+      var camX = 0, camY = 14, camZ = 0;
+      var sinY = 0, cosY = 1, sinP = 0, cosP = 1;
+      var focal = 620;
+
+      function projectPoint(wx, wy, wz) {
+        var dx = wx - camX;
+        var dy = wy - camY;
+        var dz = wz - camZ;
+
+        // Rotate by camera yaw
+        var rx = dx * cosY - dz * sinY;
+        var rz = dx * sinY + dz * cosY;
+
+        // Rotate by camera pitch
+        var ry = dy * cosP - rz * sinP;
+        var fz = dy * sinP + rz * cosP;
+
+        if (fz <= 1.2) return null;
+        var scale = focal / fz;
+        return {
+          x: W * 0.5 + rx * scale,
+          y: H * 0.5 - ry * scale,
+          z: fz,
+          scale: scale
+        };
+      }
+
+      // ---------------------------------------------------------------------
+      // Stylized Sky, Sun, Clouds & Animated Ocean Reflections
+      // ---------------------------------------------------------------------
+      var clouds = [];
+      for (var c = 0; c < 14; c++) {
+        clouds.push({
+          ang: (c / 14) * Math.PI * 2 + (c % 3) * 0.17,
+          elev: 0.07 + (c % 5) * 0.055,
+          w: 90 + (c % 4) * 55,
+          h: 18 + (c % 3) * 9,
+          speed: 0.004 + (c % 3) * 0.002
+        });
+      }
+
+      function drawSkyAndOcean(time, camYaw) {
+        var horizonY = H * 0.5 + Math.tan(cam.lookPitch) * focal;
+        horizonY = Math.max(H * 0.18, Math.min(H * 0.78, horizonY));
+
+        // 1. Sunset Sky Gradient
+        var sky = ctx.createLinearGradient(0, 0, 0, horizonY);
+        sky.addColorStop(0.0, '#090e26');
+        sky.addColorStop(0.35, '#1d1b4b');
+        sky.addColorStop(0.68, '#7c2d6e');
+        sky.addColorStop(0.88, '#ea580c');
+        sky.addColorStop(1.0, '#fde047');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, W, horizonY + 2);
+
+        // 2. Setting Sun (fixed toward north-east sky direction, reacts to yaw)
+        var sunDir = 0.28;
+        var relAng = sunDir - camYaw;
+        while (relAng > Math.PI) relAng -= Math.PI * 2;
+        while (relAng < -Math.PI) relAng += Math.PI * 2;
+
+        var sunVisible = Math.abs(relAng) < 1.35;
+        var sunX = W * 0.5 + Math.tan(relAng) * focal;
+        var sunY = horizonY - H * 0.13;
+        var sunR = Math.min(W, H) * 0.075;
+
+        if (sunVisible) {
+          var halo = ctx.createRadialGradient(sunX, sunY, sunR * 0.2, sunX, sunY, sunR * 4.5);
+          halo.addColorStop(0, 'rgba(254, 240, 138, 0.78)');
+          halo.addColorStop(0.3, 'rgba(251, 146, 60, 0.36)');
+          halo.addColorStop(1, 'rgba(251, 146, 60, 0)');
+          ctx.fillStyle = halo;
+          ctx.fillRect(0, 0, W, horizonY + 2);
+
+          var sunGrad = ctx.createLinearGradient(sunX, sunY - sunR, sunX, sunY + sunR);
+          sunGrad.addColorStop(0, '#fef9c3');
+          sunGrad.addColorStop(0.65, '#fde047');
+          sunGrad.addColorStop(1, '#fb7185');
+          ctx.fillStyle = sunGrad;
+          ctx.beginPath();
+          ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 3. Drifting Stylized Sunset Clouds
+        for (var i = 0; i < clouds.length; i++) {
+          var cl = clouds[i];
+          var ca = cl.ang + time * cl.speed - camYaw;
+          while (ca > Math.PI) ca -= Math.PI * 2;
+          while (ca < -Math.PI) ca += Math.PI * 2;
+          if (Math.abs(ca) > 1.25) continue;
+          var cx = W * 0.5 + Math.tan(ca) * focal;
+          var cy = horizonY - cl.elev * H;
+          var cw = cl.w * DPR;
+          var ch = cl.h * DPR;
+          ctx.fillStyle = 'rgba(255, 224, 194, 0.18)';
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, cw, ch, 0, 0, Math.PI * 2);
+          ctx.ellipse(cx - cw * 0.45, cy + ch * 0.25, cw * 0.6, ch * 0.7, 0, 0, Math.PI * 2);
+          ctx.ellipse(cx + cw * 0.48, cy + ch * 0.2, cw * 0.55, ch * 0.65, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 4. Deep Sunlit Ocean Base
+        var sea = ctx.createLinearGradient(0, horizonY, 0, H);
+        sea.addColorStop(0.0, '#1e3a5f');
+        sea.addColorStop(0.16, '#0f3460');
+        sea.addColorStop(0.45, '#0b2545');
+        sea.addColorStop(1.0, '#06152b');
+        ctx.fillStyle = sea;
+        ctx.fillRect(0, horizonY, W, H - horizonY);
+
+        // Horizon atmospheric glow band
+        var mist = ctx.createLinearGradient(0, horizonY - 14 * DPR, 0, horizonY + 26 * DPR);
+        mist.addColorStop(0, 'rgba(253, 224, 71, 0)');
+        mist.addColorStop(0.45, 'rgba(251, 146, 60, 0.34)');
+        mist.addColorStop(1, 'rgba(14, 116, 144, 0)');
+        ctx.fillStyle = mist;
+        ctx.fillRect(0, horizonY - 14 * DPR, W, 40 * DPR);
+
+        // 5. Animated Specular Sun Reflections on Ocean Waves
+        if (sunVisible) {
+          var bands = 34;
+          for (var b = 0; b < bands; b++) {
+            var t = b / bands;
+            var y = horizonY + Math.pow(t, 1.85) * (H - horizonY);
+            var waveShift = Math.sin(time * 2.6 + b * 0.85 + craft.z * 0.025) * (10 + t * 38) * DPR;
+            var rw = (sunR * (0.45 + t * 2.3)) * (0.7 + 0.3 * Math.sin(time * 3.8 + b * 1.4));
+            var rh = (1.6 + t * 5.2) * DPR;
+            ctx.fillStyle = b < 10
+              ? 'rgba(254, 240, 138, ' + (0.42 - t * 0.2).toFixed(3) + ')'
+              : 'rgba(251, 146, 60, ' + (0.3 - t * 0.16).toFixed(3) + ')';
+            ctx.beginPath();
+            ctx.roundRect(sunX + waveShift - rw * 0.5, y, rw, rh, rh);
+            ctx.fill();
+          }
+        }
+
+        // 6. Subtle Animated Ocean Swell Highlights (world-anchored motion feel)
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.12)';
+        ctx.lineWidth = 1.2 * DPR;
+        var waveRows = 16;
+        var zOffset = ((craft.z * 0.08 + time * 1.4) % 1 + 1) % 1;
+        for (var r = 0; r < waveRows; r++) {
+          var rt = (r + zOffset) / waveRows;
+          var wy = horizonY + Math.pow(rt, 2.2) * (H - horizonY);
+          var amp = (2 + rt * 5) * DPR;
+          ctx.beginPath();
+          for (var x = 0; x <= W; x += 64 * DPR) {
+            var dy = Math.sin(x * 0.012 + time * 2.1 + r * 1.3 + camYaw * 3.0) * amp;
+            if (x === 0) ctx.moveTo(x, wy + dy);
+            else ctx.lineTo(x, wy + dy);
+          }
+          ctx.stroke();
+        }
+
+        return horizonY;
+      }
+
+      // ---------------------------------------------------------------------
+      // 3D Entity Rendering (Islands, Neon Cities, Bridges, Rings, Buoys)
+      // ---------------------------------------------------------------------
+      function drawIsland(ent, proj, tier, fog) {
+        var s = proj.scale;
+        var rx = ent.radius * s;
+        var ry = ent.radius * s * 0.28;
+        var mh = ent.height * s;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0.18, 1 - fog * 0.78);
+
+        // Water reflection shadow
+        ctx.fillStyle = 'rgba(4, 15, 34, 0.42)';
+        ctx.beginPath();
+        ctx.ellipse(proj.x, proj.y + ry * 0.32, rx * 1.08, ry * 0.9, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Warm sandy beach ring
+        ctx.fillStyle = '#e7c68c';
+        ctx.beginPath();
+        ctx.ellipse(proj.x, proj.y, rx, ry, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Lush island mound
+        var moundGrad = ctx.createLinearGradient(proj.x, proj.y - mh, proj.x, proj.y + ry * 0.2);
+        moundGrad.addColorStop(0, tier === 3 ? '#2c4c64' : '#10b981');
+        moundGrad.addColorStop(1, tier === 3 ? '#1e3a5f' : '#047857');
+        ctx.fillStyle = moundGrad;
+        ctx.beginPath();
+        ctx.moveTo(proj.x - rx * 0.86, proj.y);
+        ctx.quadraticCurveTo(proj.x, proj.y - mh * 1.65, proj.x + rx * 0.86, proj.y);
+        ctx.closePath();
+        ctx.fill();
+
+        // Detailed palm / pine trees in Tier 1 & Tier 2
+        if (tier <= 2 && ent.trees) {
+          for (var i = 0; i < ent.trees.length; i++) {
+            var tr = ent.trees[i];
+            var tp = projectPoint(ent.x + tr.dx, ent.height * 0.48, ent.z + tr.dz);
+            if (!tp) continue;
+            var th = tr.h * tp.scale;
+            if (th < 3) continue;
+
+            if (tr.palm) {
+              var leanX = tr.lean * tp.scale;
+              ctx.strokeStyle = '#78350f';
+              ctx.lineWidth = Math.max(1.2, 1.8 * tp.scale);
+              ctx.beginPath();
+              ctx.moveTo(tp.x, tp.y);
+              ctx.quadraticCurveTo(tp.x + leanX * 0.4, tp.y - th * 0.55, tp.x + leanX, tp.y - th);
+              ctx.stroke();
+
+              var topX = tp.x + leanX;
+              var topY = tp.y - th;
+              ctx.strokeStyle = '#22c55e';
+              ctx.lineWidth = Math.max(1.2, 2.0 * tp.scale);
+              for (var f = 0; f < 5; f++) {
+                var fa = -Math.PI + (f / 4) * Math.PI;
+                ctx.beginPath();
+                ctx.moveTo(topX, topY);
+                ctx.quadraticCurveTo(
+                  topX + Math.cos(fa) * th * 0.4,
+                  topY - th * 0.22,
+                  topX + Math.cos(fa) * th * 0.65,
+                  topY + Math.sin(fa) * th * 0.18 + th * 0.12
+                );
+                ctx.stroke();
+              }
+            } else {
+              // Stylized layered coastal pine
+              ctx.fillStyle = '#065f46';
+              ctx.beginPath();
+              ctx.moveTo(tp.x, tp.y - th);
+              ctx.lineTo(tp.x - th * 0.34, tp.y - th * 0.15);
+              ctx.lineTo(tp.x + th * 0.34, tp.y - th * 0.15);
+              ctx.closePath();
+              ctx.fill();
+              ctx.fillStyle = '#10b981';
+              ctx.beginPath();
+              ctx.moveTo(tp.x, tp.y - th * 1.05);
+              ctx.lineTo(tp.x - th * 0.24, tp.y - th * 0.45);
+              ctx.lineTo(tp.x + th * 0.24, tp.y - th * 0.45);
+              ctx.closePath();
+              ctx.fill();
+            }
+          }
+        }
+        ctx.restore();
+      }
+
+      function drawCity(ent, proj, tier, fog) {
+        var s = proj.scale;
+        var rx = ent.radius * s;
+        var ry = ent.radius * s * 0.26;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0.22, 1 - fog * 0.72);
+
+        // Coastal seawall platform
+        ctx.fillStyle = '#1e293b';
+        ctx.beginPath();
+        ctx.ellipse(proj.x, proj.y, rx, ry, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+        ctx.lineWidth = Math.max(1, 1.5 * DPR);
+        ctx.stroke();
+
+        // Sort buildings back-to-front relative to camera
+        var projected = [];
+        for (var i = 0; i < ent.buildings.length; i++) {
+          var b = ent.buildings[i];
+          var bp = projectPoint(ent.x + b.dx, 3, ent.z + b.dz);
+          if (!bp) continue;
+          projected.push({ b: b, p: bp });
+        }
+        projected.sort(function (a, c) { return c.p.z - a.p.z; });
+
+        for (var j = 0; j < projected.length; j++) {
+          var item = projected[j];
+          var bld = item.b;
+          var bp2 = item.p;
+          var bw = bld.w * bp2.scale;
+          var bh = bld.h * bp2.scale;
+          if (bw < 1.5 || bh < 2) continue;
+
+          // Tower body with sunset rim gradient
+          var tGrad = ctx.createLinearGradient(bp2.x - bw * 0.5, bp2.y - bh, bp2.x + bw * 0.5, bp2.y);
+          if (bld.tone === 0) {
+            tGrad.addColorStop(0, '#312e81');
+            tGrad.addColorStop(1, '#0f172a');
+          } else if (bld.tone === 1) {
+            tGrad.addColorStop(0, '#4c1d95');
+            tGrad.addColorStop(1, '#1e1b4b');
+          } else {
+            tGrad.addColorStop(0, '#1e3a5f');
+            tGrad.addColorStop(1, '#0f172a');
+          }
+          ctx.fillStyle = tGrad;
+          ctx.fillRect(bp2.x - bw * 0.5, bp2.y - bh, bw, bh);
+
+          // Sunset warm highlight edge
+          ctx.fillStyle = 'rgba(251, 146, 60, 0.25)';
+          ctx.fillRect(bp2.x + bw * 0.34, bp2.y - bh, bw * 0.16, bh);
+
+          // Rooftop neon glow bar
+          ctx.fillStyle = bld.neon;
+          ctx.fillRect(bp2.x - bw * 0.5, bp2.y - bh, bw, Math.max(1.5, 2.2 * DPR));
+
+          // Lit window strips in Tier 1 & Tier 2
+          if (tier <= 2 && bw > 6) {
+            ctx.fillStyle = 'rgba(254, 240, 138, 0.52)';
+            var rows = Math.min(7, Math.floor(bh / (6 * DPR)));
+            for (var r = 1; r <= rows; r++) {
+              var wy = bp2.y - bh + (r / (rows + 1)) * bh;
+              ctx.fillRect(bp2.x - bw * 0.36, wy, bw * 0.72, Math.max(1, 1.4 * DPR));
+            }
+          }
+        }
+        ctx.restore();
+      }
+
+      function drawBridge(ent, fog) {
+        var half = ent.span * 0.5;
+        var dx = ent.alongX ? half : 0;
+        var dz = ent.alongX ? 0 : half;
+
+        var pL = projectPoint(ent.x - dx, 14, ent.z - dz);
+        var pR = projectPoint(ent.x + dx, 14, ent.z + dz);
+        var tL = projectPoint(ent.x - dx * 0.55, ent.pylonH, ent.z - dz * 0.55);
+        var tR = projectPoint(ent.x + dx * 0.55, ent.pylonH, ent.z + dz * 0.55);
+        var bL = projectPoint(ent.x - dx * 0.55, 0, ent.z - dz * 0.55);
+        var bR = projectPoint(ent.x + dx * 0.55, 0, ent.z + dz * 0.55);
+        if (!pL || !pR || !tL || !tR || !bL || !bR) return;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0.2, 1 - fog * 0.75);
+
+        // Suspension cables
+        ctx.strokeStyle = 'rgba(251, 191, 36, 0.72)';
+        ctx.lineWidth = Math.max(1.2, 1.6 * DPR);
+        ctx.beginPath();
+        ctx.moveTo(pL.x, pL.y);
+        ctx.lineTo(tL.x, tL.y);
+        ctx.quadraticCurveTo((tL.x + tR.x) * 0.5, (pL.y + pR.y) * 0.5 + 8 * DPR, tR.x, tR.y);
+        ctx.lineTo(pR.x, pR.y);
+        ctx.stroke();
+
+        // Pylons
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = Math.max(2, 3.2 * DPR);
+        ctx.beginPath();
+        ctx.moveTo(bL.x, bL.y); ctx.lineTo(tL.x, tL.y);
+        ctx.moveTo(bR.x, bR.y); ctx.lineTo(tR.x, tR.y);
+        ctx.stroke();
+
+        // Road deck
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = Math.max(2.4, 4.2 * DPR);
+        ctx.beginPath();
+        ctx.moveTo(pL.x, pL.y);
+        ctx.lineTo(pR.x, pR.y);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      function drawRing(ent, proj, time, fog) {
+        if (ent.collected) return;
+        var bob = Math.sin(time * 2.8 + ent.phase) * 2.2;
+        var p = projectPoint(ent.x, ent.y + bob, ent.z);
+        if (!p) return;
+        var r = ent.radius * p.scale;
+        if (r < 2) return;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0.25, 1 - fog * 0.65);
+
+        // Outer glow
+        ctx.strokeStyle = 'rgba(253, 224, 71, 0.35)';
+        ctx.lineWidth = Math.max(4, r * 0.28);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Core golden ring
+        ctx.strokeStyle = '#fde047';
+        ctx.lineWidth = Math.max(2, r * 0.13);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Inner cyan energy ring
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = Math.max(1, r * 0.06);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r * 0.78, time * 2, time * 2 + Math.PI * 1.4);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      function drawBuoy(ent, proj, time, fog) {
+        var r = Math.max(1.5, 2.2 * proj.scale);
+        var bob = Math.sin(time * 3.2 + ent.phase) * 0.7 * proj.scale;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0.18, 1 - fog * 0.8);
+        ctx.fillStyle = ent.color;
+        ctx.beginPath();
+        ctx.arc(proj.x, proj.y - r * 1.2 + bob, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // ---------------------------------------------------------------------
+      // Player Hover-Cruiser & Foam Wake
+      // ---------------------------------------------------------------------
+      function drawWake() {
+        for (var i = wakeTrail.length - 1; i >= 1; i--) {
+          var a = wakeTrail[i];
+          var b = wakeTrail[i - 1];
+          if (a.alpha <= 0.02) continue;
+          var p1 = projectPoint(a.x, 0.3, a.z);
+          var p2 = projectPoint(b.x, 0.3, b.z);
+          if (!p1 || !p2) continue;
+          ctx.strokeStyle = 'rgba(186, 230, 253, ' + (a.alpha * 0.42).toFixed(3) + ')';
+          ctx.lineWidth = Math.max(1.5, a.spread * p1.scale);
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+      }
+
+      function drawHoverCruiser(time) {
+        var hoverY = craft.y + Math.sin(time * 5.2) * 0.35;
+        var pCenter = projectPoint(craft.x, hoverY, craft.z);
+        if (!pCenter) return;
+
+        var s = pCenter.scale;
+        var w = 4.6 * s;
+        var h = 2.1 * s;
+
+        ctx.save();
+        ctx.translate(pCenter.x, pCenter.y);
+        ctx.rotate(-craft.bank * 0.55);
+
+        // Hover shadow on water
+        ctx.fillStyle = 'rgba(2, 12, 27, 0.48)';
+        ctx.beginPath();
+        ctx.ellipse(0, h * 1.45, w * 1.25, h * 0.45, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cyan thruster glow cones
+        var flame = (1.1 + craft.boost * 1.15 + Math.sin(time * 32) * 0.14) * s;
+        var thrusterGrad = ctx.createRadialGradient(-w * 0.42, h * 0.15, 0, -w * 0.42, h * 0.15, flame * 2.2);
+        thrusterGrad.addColorStop(0, '#e0f2fe');
+        thrusterGrad.addColorStop(0.4, '#38bdf8');
+        thrusterGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+        ctx.fillStyle = thrusterGrad;
+        ctx.beginPath();
+        ctx.arc(-w * 0.42, h * 0.2, flame * 2.1, 0, Math.PI * 2);
+        ctx.arc(w * 0.42, h * 0.2, flame * 2.1, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sculpted hover-cruiser hull (sleek pearlescent white + sunset orange trim)
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.moveTo(0, -h * 1.35);
+        ctx.lineTo(w * 1.15, h * 0.25);
+        ctx.lineTo(w * 0.68, h * 0.72);
+        ctx.lineTo(-w * 0.68, h * 0.72);
+        ctx.lineTo(-w * 1.15, h * 0.25);
+        ctx.closePath();
+        ctx.fill();
+
+        // Upper deck
+        var hullGrad = ctx.createLinearGradient(0, -h * 1.3, 0, h * 0.7);
+        hullGrad.addColorStop(0, '#f8fafc');
+        hullGrad.addColorStop(0.65, '#cbd5e1');
+        hullGrad.addColorStop(1, '#64748b');
+        ctx.fillStyle = hullGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, -h * 1.25);
+        ctx.lineTo(w * 0.96, h * 0.12);
+        ctx.lineTo(w * 0.56, h * 0.48);
+        ctx.lineTo(-w * 0.56, h * 0.48);
+        ctx.lineTo(-w * 0.96, h * 0.12);
+        ctx.closePath();
+        ctx.fill();
+
+        // Cockpit canopy glass
+        ctx.fillStyle = '#0284c7';
+        ctx.beginPath();
+        ctx.moveTo(0, -h * 0.88);
+        ctx.lineTo(w * 0.36, -h * 0.05);
+        ctx.lineTo(0, h * 0.15);
+        ctx.lineTo(-w * 0.36, -h * 0.05);
+        ctx.closePath();
+        ctx.fill();
+
+        // Rear neon light bar
+        ctx.strokeStyle = craft.boost > 0.2 ? '#38bdf8' : '#fb7185';
+        ctx.lineWidth = Math.max(2, 0.35 * s);
+        ctx.beginPath();
+        ctx.moveTo(-w * 0.52, h * 0.48);
+        ctx.lineTo(w * 0.52, h * 0.48);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+
+      // ---------------------------------------------------------------------
+      // Engine X-Ray Predictive Streaming Radar
+      // ---------------------------------------------------------------------
+      function drawRadar(t1Count, t2Count, t3Count, entityCount, fps) {
+        if (!xrayOpen) return;
+
+        var rw = radarCanvas.width;
+        var rh = radarCanvas.height;
+        rctx.clearRect(0, 0, rw, rh);
+
+        // Background grid
+        rctx.fillStyle = '#060b18';
+        rctx.fillRect(0, 0, rw, rh);
+
+        var gridCells = 9; // -4..+4 around player sector
+        var cellPx = rw / gridCells;
+        var csx = Math.floor(craft.x / SECTOR_SIZE);
+        var csz = Math.floor(craft.z / SECTOR_SIZE);
+        var fracX = (craft.x / SECTOR_SIZE) - csx;
+        var fracZ = (craft.z / SECTOR_SIZE) - csz;
+
+        // Draw active sectors (Green = T1, Cyan = T2, Gray = T3)
+        sectors.forEach(function (sec) {
+          var gx = (sec.sx - csx) + 4;
+          var gz = 4 - (sec.sz - csz);
+          if (gx < 0 || gx >= gridCells || gz < 0 || gz >= gridCells) return;
+
+          var x0 = gx * cellPx + 2;
+          var y0 = gz * cellPx + 2;
+          var sz = cellPx - 4;
+
+          if (sec.tier === 1) {
+            rctx.fillStyle = 'rgba(34, 197, 94, 0.42)';
+            rctx.strokeStyle = '#22c55e';
+          } else if (sec.tier === 2) {
+            rctx.fillStyle = 'rgba(34, 211, 238, 0.36)';
+            rctx.strokeStyle = '#22d3ee';
+          } else {
+            rctx.fillStyle = 'rgba(100, 116, 139, 0.24)';
+            rctx.strokeStyle = 'rgba(148, 163, 184, 0.5)';
+          }
+          rctx.lineWidth = 1.4;
+          rctx.beginPath();
+          rctx.roundRect(x0, y0, sz, sz, 4);
+          rctx.fill();
+          rctx.stroke();
+        });
+
+        // Draw O(1) Purged sector red flashes
+        purgedFlashes.forEach(function (fl) {
+          var gx = (fl.sx - csx) + 4;
+          var gz = 4 - (fl.sz - csz);
+          if (gx < 0 || gx >= gridCells || gz < 0 || gz >= gridCells) return;
+          var alpha = Math.max(0, Math.min(1, fl.ttl / 1.35));
+          rctx.fillStyle = 'rgba(244, 63, 94, ' + (alpha * 0.62).toFixed(3) + ')';
+          rctx.strokeStyle = 'rgba(251, 113, 133, ' + alpha.toFixed(3) + ')';
+          rctx.lineWidth = 1.8;
+          rctx.beginPath();
+          rctx.roundRect(gx * cellPx + 2, gz * cellPx + 2, cellPx - 4, cellPx - 4, 4);
+          rctx.fill();
+          rctx.stroke();
+        });
+
+        // Subtle grid lines
+        rctx.strokeStyle = 'rgba(148, 163, 184, 0.1)';
+        rctx.lineWidth = 1;
+        for (var g = 1; g < gridCells; g++) {
+          var p = g * cellPx;
+          rctx.beginPath();
+          rctx.moveTo(p, 0); rctx.lineTo(p, rh);
+          rctx.moveTo(0, p); rctx.lineTo(rw, p);
+          rctx.stroke();
+        }
+
+        // Player position inside center sector cell
+        var px = (4 + fracX) * cellPx;
+        var py = (5 - fracZ) * cellPx;
+
+        // Predictive Velocity Vector Arrow
+        var vLen = Math.min(cellPx * 2.6, (Math.hypot(craft.vx, craft.vz) / 115) * cellPx * 2.4 + 14);
+        var vxEnd = px + Math.sin(craft.yaw) * vLen;
+        var vyEnd = py - Math.cos(craft.yaw) * vLen;
+
+        rctx.strokeStyle = '#fde047';
+        rctx.lineWidth = 2.4;
+        rctx.beginPath();
+        rctx.moveTo(px, py);
+        rctx.lineTo(vxEnd, vyEnd);
+        rctx.stroke();
+
+        // Arrowhead
+        var aAng = Math.atan2(vyEnd - py, vxEnd - px);
+        rctx.fillStyle = '#fde047';
+        rctx.beginPath();
+        rctx.moveTo(vxEnd, vyEnd);
+        rctx.lineTo(vxEnd - Math.cos(aAng - 0.5) * 8, vyEnd - Math.sin(aAng - 0.5) * 8);
+        rctx.lineTo(vxEnd - Math.cos(aAng + 0.5) * 8, vyEnd - Math.sin(aAng + 0.5) * 8);
+        rctx.closePath();
+        rctx.fill();
+
+        // Player dot
+        rctx.fillStyle = '#ffffff';
+        rctx.beginPath();
+        rctx.arc(px, py, 4.5, 0, Math.PI * 2);
+        rctx.fill();
+
+        // Update telemetry labels
+        fpsEl.textContent = Math.round(fps) + ' FPS';
+        entEl.textContent = String(entityCount);
+        secEl.textContent = t1Count + '/' + t2Count + '/' + t3Count;
+        purgeEl.textContent = String(totalPurges);
+      }
+
+      // ---------------------------------------------------------------------
+      // Main 60 FPS Simulation & Render Loop
+      // ---------------------------------------------------------------------
+      var lastTs = performance.now();
+      var fpsSmooth = 60;
+      var wakeTimer = 0;
+
+      // Initial streaming bubble hydration
+      updateStreamingBubble(craft.x, craft.z, craft.vx, craft.vz, 0.016);
+
+      function frame(now) {
+        var dt = Math.min(0.05, Math.max(0.001, (now - lastTs) / 1000));
+        lastTs = now;
+        var instFps = 1 / dt;
+        fpsSmooth = fpsSmooth * 0.92 + instFps * 0.08;
+        var time = now * 0.001;
+
+        // 1. Controls & Hover-Cruiser Physics
+        var steer = 0;
+        if (keys['KeyA'] || keys['ArrowLeft']) steer -= 1;
+        if (keys['KeyD'] || keys['ArrowRight']) steer += 1;
+
+        var throttle = 0;
+        if (keys['KeyW'] || keys['ArrowUp']) throttle += 1;
+        if (keys['KeyS'] || keys['ArrowDown']) throttle -= 1;
+
+        var boosting = Boolean(keys['ShiftLeft'] || keys['ShiftRight'] || keys['Space']);
+        var targetBoost = boosting ? 1 : 0;
+        craft.boost += (targetBoost - craft.boost) * Math.min(1, dt * 6);
+
+        var turnRate = 1.65;
+        craft.yaw += steer * turnRate * dt;
+        craft.bank += (steer * 0.58 - craft.bank) * Math.min(1, dt * 7);
+
+        var targetSpeed = 48 + throttle * 46 + craft.boost * 58;
+        if (throttle < 0) targetSpeed = Math.max(-18, 22 + throttle * 40);
+        craft.speed += (targetSpeed - craft.speed) * Math.min(1, dt * 3.4);
+
+        craft.vx = Math.sin(craft.yaw) * craft.speed;
+        craft.vz = Math.cos(craft.yaw) * craft.speed;
+        craft.x += craft.vx * dt;
+        craft.z += craft.vz * dt;
+
+        // Smooth camera mouse-look
+        cam.lookYaw += (cam.targetLookYaw - cam.lookYaw) * Math.min(1, dt * 6);
+        cam.lookPitch += (cam.targetLookPitch - cam.lookPitch) * Math.min(1, dt * 6);
+
+        // 2. Update Predictive Open-World Streaming Bubble
+        updateStreamingBubble(craft.x, craft.z, craft.vx, craft.vz, dt);
+
+        // 3. Record Foam Wake Trail
+        wakeTimer += dt;
+        if (wakeTimer > 0.025) {
+          wakeTimer = 0;
+          for (var wi = wakeTrail.length - 1; wi >= 1; wi--) {
+            wakeTrail[wi].x = wakeTrail[wi - 1].x;
+            wakeTrail[wi].z = wakeTrail[wi - 1].z;
+            wakeTrail[wi].spread = wakeTrail[wi - 1].spread + 0.18;
+            wakeTrail[wi].alpha = wakeTrail[wi - 1].alpha * 0.93;
+          }
+          wakeTrail[0].x = craft.x - Math.sin(craft.yaw) * 4;
+          wakeTrail[0].z = craft.z - Math.cos(craft.yaw) * 4;
+          wakeTrail[0].spread = 2.6;
+          wakeTrail[0].alpha = Math.min(1, Math.abs(craft.speed) / 45);
+        }
+
+        // 4. Camera Placement (Third-person chase camera)
+        var camYaw = craft.yaw + cam.lookYaw;
+        var chaseDist = 24 + craft.boost * 4;
+        camX = craft.x - Math.sin(camYaw) * chaseDist;
+        camZ = craft.z - Math.cos(camYaw) * chaseDist;
+        camY = 12.2 + craft.boost * 1.2;
+
+        sinY = Math.sin(-camYaw);
+        cosY = Math.cos(-camYaw);
+        sinP = Math.sin(cam.lookPitch);
+        cosP = Math.cos(cam.lookPitch);
+        focal = Math.min(W, H) * 0.88;
+
+        // 5. Render Sky & Sunlit Ocean
+        drawSkyAndOcean(time, camYaw);
+
+        // 6. Gather Visible Entities & Check Ring Collection
+        var drawList = [];
+        var t1Count = 0, t2Count = 0, t3Count = 0, totalEntities = 0;
+        var maxViewDist = SECTOR_SIZE * 3.35;
+
+        sectors.forEach(function (sec) {
+          if (sec.tier === 1) t1Count++;
+          else if (sec.tier === 2) t2Count++;
+          else t3Count++;
+
+          var list = sec.entities;
+          totalEntities += list.length;
+
+          for (var i = 0; i < list.length; i++) {
+            var ent = list[i];
+
+            // Ring checkpoint collection in Tier 1
+            if (ent.kind === 'ring' && !ent.collected && sec.tier === 1) {
+              var rdx = ent.x - craft.x;
+              var rdz = ent.z - craft.z;
+              if (rdx * rdx + rdz * rdz < 22 * 22) {
+                ent.collected = true;
+                collectedRings.add(ent.id);
+                score++;
+                scoreEl.textContent = String(score);
+                craft.speed = Math.min(155, craft.speed + 36);
+                spawnBurst(ent.x, ent.y, ent.z, '#fde047', 26);
+                playRingChime();
+                showToast('+1 Checkpoint Ring · Surge Boost!');
+              }
+            }
+
+            // Gentle soft bounce if cruising directly into an island core
+            if ((ent.kind === 'island' || ent.kind === 'city') && sec.tier === 1) {
+              var idx = craft.x - ent.x;
+              var idz = craft.z - ent.z;
+              var minR = ent.radius + 5;
+              var d2 = idx * idx + idz * idz;
+              if (d2 < minR * minR && d2 > 0.01) {
+                var d = Math.sqrt(d2);
+                craft.x = ent.x + (idx / d) * minR;
+                craft.z = ent.z + (idz / d) * minR;
+              }
+            }
+
+            var proj = projectPoint(ent.x, ent.y, ent.z);
+            if (!proj || proj.z > maxViewDist) continue;
+            drawList.push({ ent: ent, proj: proj, tier: sec.tier, fog: Math.min(1, proj.z / maxViewDist) });
+          }
+        });
+
+        // Painter's algorithm: farthest to nearest
+        drawList.sort(function (a, b) { return b.proj.z - a.proj.z; });
+
+        for (var dIdx = 0; dIdx < drawList.length; dIdx++) {
+          var item = drawList[dIdx];
+          var kind = item.ent.kind;
+          if (kind === 'island') drawIsland(item.ent, item.proj, item.tier, item.fog);
+          else if (kind === 'city') drawCity(item.ent, item.proj, item.tier, item.fog);
+          else if (kind === 'bridge') drawBridge(item.ent, item.fog);
+          else if (kind === 'ring') drawRing(item.ent, item.proj, time, item.fog);
+          else if (kind === 'buoy') drawBuoy(item.ent, item.proj, time, item.fog);
+        }
+
+        // 7. Draw Foam Wake & Hover-Cruiser
+        drawWake();
+        drawHoverCruiser(time);
+
+        // 8. Update & Draw Celebration Particles
+        for (var pi = 0; pi < particles.length; pi++) {
+          var pt = particles[pi];
+          if (!pt.active) continue;
+          pt.life += dt;
+          if (pt.life >= pt.maxLife) {
+            pt.active = false;
+            continue;
+          }
+          pt.x += pt.vx * dt;
+          pt.y += pt.vy * dt;
+          pt.z += pt.vz * dt;
+          pt.vy -= 26 * dt;
+          var pp = projectPoint(pt.x, pt.y, pt.z);
+          if (!pp) continue;
+          var alpha = 1 - pt.life / pt.maxLife;
+          ctx.fillStyle = pt.color;
+          ctx.globalAlpha = alpha;
+          ctx.beginPath();
+          ctx.arc(pp.x, pp.y, Math.max(1.5, pt.size * pp.scale * 0.25), 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+
+        // 9. Update HUD & Engine X-Ray Radar
+        speedEl.textContent = String(Math.max(0, Math.round(craft.speed * 0.9)));
+        if (toastTimer > 0) {
+          toastTimer -= dt;
+          if (toastTimer <= 0) toastEl.classList.remove('show');
+        }
+        drawRadar(t1Count, t2Count, t3Count, totalEntities, fpsSmooth);
+
+        requestAnimationFrame(frame);
+      }
+
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>

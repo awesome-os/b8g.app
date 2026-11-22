@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sky Drift — Alpine Glider | b8g.app</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #0f172a; font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; user-select: none; }
+    canvas { display: block; width: 100%; height: 100%; }
+    .hud {
+      position: fixed; top: 16px; left: 16px; right: 16px; pointer-events: none;
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .pill {
+      background: rgba(15, 23, 42, 0.72); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.16); border-radius: 14px;
+      padding: 10px 16px; color: #fff; pointer-events: auto;
+    }
+    .score { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; color: #fde047; }
+    .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.7); }
+    .back {
+      text-decoration: none; color: #fff; font-weight: 600; font-size: 13px;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .tip {
+      position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.72); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 999px; padding: 8px 18px; font-size: 13px; backdrop-filter: blur(8px);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <div class="hud">
+    <div class="pill"><a class="back" href="../index.html">← b8g.app</a></div>
+    <div class="pill" style="text-align:right">
+      <div class="label">Rings Collected</div>
+      <div class="score" id="score">0</div>
+    </div>
+  </div>
+  <div class="tip">Move mouse or use Arrow Keys / WASD to steer through the golden rings</div>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById('game');
+      const ctx = canvas.getContext('2d');
+      const scoreEl = document.getElementById('score');
+
+      let W = 0, H = 0;
+      function resize() {
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        W = canvas.width = Math.floor(window.innerWidth * dpr);
+        H = canvas.height = Math.floor(window.innerHeight * dpr);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      // Player glider state
+      const player = { x: 0, y: 0.15, vx: 0, vy: 0, bank: 0, targetX: 0, targetY: 0.15 };
+      const keys = {};
+      let score = 0;
+      let speed = 28;
+      let worldZ = 0;
+      const trailL = [];
+      const trailR = [];
+
+      // Stylized 3D rings + alpine pine trees + clouds
+      const rings = [];
+      for (let i = 0; i < 12; i++) {
+        rings.push({
+          x: (Math.sin(i * 1.7) * 0.55),
+          y: -0.15 + Math.cos(i * 1.1) * 0.25,
+          z: 35 + i * 24,
+          hit: false,
+          flash: 0,
+        });
+      }
+
+      const trees = [];
+      for (let i = 0; i < 140; i++) {
+        const side = (i % 2 === 0 ? 1 : -1);
+        trees.push({
+          x: side * (0.55 + ((i * 37) % 100) / 35),
+          z: (i * 2.4) % 260,
+          scale: 0.7 + ((i * 19) % 10) * 0.08,
+          shade: (i * 29) % 3,
+        });
+      }
+
+      const clouds = [];
+      for (let i = 0; i < 18; i++) {
+        clouds.push({
+          x: (((i * 73) % 100) / 100 - 0.5) * 3.4,
+          y: -0.45 - ((i * 23) % 40) / 100,
+          z: 20 + i * 16,
+          r: 45 + (i % 4) * 20,
+        });
+      }
+
+      window.addEventListener('keydown', (e) => { keys[e.code] = true; });
+      window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+      window.addEventListener('mousemove', (e) => {
+        player.targetX = ((e.clientX / window.innerWidth) - 0.5) * 1.5;
+        player.targetY = ((e.clientY / window.innerHeight) - 0.5) * 0.9;
+      });
+      window.addEventListener('touchmove', (e) => {
+        const t = e.touches[0];
+        if (!t) return;
+        player.targetX = ((t.clientX / window.innerWidth) - 0.5) * 1.5;
+        player.targetY = ((t.clientY / window.innerHeight) - 0.5) * 0.9;
+      }, { passive: true });
+
+      function drawPaintedSky() {
+        const sky = ctx.createLinearGradient(0, 0, 0, H * 0.62);
+        sky.addColorStop(0, '#0284c7');
+        sky.addColorStop(0.55, '#38bdf8');
+        sky.addColorStop(0.85, '#bae6fd');
+        sky.addColorStop(1, '#fef3c7');
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, W, H);
+
+        // Warm alpine sun + halo
+        const sx = W * 0.74, sy = H * 0.22;
+        const sun = ctx.createRadialGradient(sx, sy, 8, sx, sy, W * 0.22);
+        sun.addColorStop(0, 'rgba(255,253,235,1)');
+        sun.addColorStop(0.18, 'rgba(254,240,138,0.85)');
+        sun.addColorStop(0.55, 'rgba(251,191,36,0.18)');
+        sun.addColorStop(1, 'rgba(251,191,36,0)');
+        ctx.fillStyle = sun;
+        ctx.fillRect(0, 0, W, H * 0.65);
+
+        // Layered painted mountain silhouettes
+        const horizon = H * 0.54 - player.y * H * 0.12;
+        const drawRange = (baseY, amp, freq, shift, colTop, colBot) => {
+          const g = ctx.createLinearGradient(0, baseY - amp, 0, baseY + 120);
+          g.addColorStop(0, colTop);
+          g.addColorStop(1, colBot);
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.moveTo(0, H);
+          for (let x = 0; x <= W; x += 24) {
+            const nx = x / W + shift - player.x * 0.05;
+            const peak = Math.abs(Math.sin(nx * freq)) * amp + Math.sin(nx * freq * 2.3) * amp * 0.35;
+            ctx.lineTo(x, baseY - peak);
+          }
+          ctx.lineTo(W, H);
+          ctx.closePath();
+          ctx.fill();
+        };
+        drawRange(horizon + 20, H * 0.24, 5.2, 0.2, '#e2e8f0', '#64748b');
+        drawRange(horizon + 38, H * 0.16, 7.1, 0.7, '#475569', '#1e3a5f');
+
+        // Lush alpine valley floor
+        const ground = ctx.createLinearGradient(0, horizon + 18, 0, H);
+        ground.addColorStop(0, '#166534');
+        ground.addColorStop(0.45, '#15803d');
+        ground.addColorStop(1, '#064e3b');
+        ctx.fillStyle = ground;
+        ctx.fillRect(0, horizon + 18, W, H - horizon);
+
+        // Shimmering winding valley river
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.55)';
+        ctx.beginPath();
+        ctx.moveTo(W * 0.5 - player.x * W * 0.12 - 12, horizon + 18);
+        ctx.lineTo(W * 0.5 - player.x * W * 0.12 + 12, horizon + 18);
+        ctx.lineTo(W * 0.5 - player.x * W * 0.38 + 160, H);
+        ctx.lineTo(W * 0.5 - player.x * W * 0.38 - 160, H);
+        ctx.closePath();
+        ctx.fill();
+        return horizon + 18;
+      }
+
+      function drawTree(sx, sy, sc, shade) {
+        const colors = ['#14532d', '#166534', '#065f46'];
+        ctx.fillStyle = '#5c4033';
+        ctx.fillRect(sx - sc * 0.1, sy - sc * 0.35, sc * 0.2, sc * 0.35);
+        ctx.fillStyle = colors[shade];
+        for (let tier = 0; tier < 3; tier++) {
+          const ty = sy - sc * (0.3 + tier * 0.38);
+          const tw = sc * (0.65 - tier * 0.14);
+          ctx.beginPath();
+          ctx.moveTo(sx, ty - sc * 0.55);
+          ctx.lineTo(sx - tw, ty);
+          ctx.lineTo(sx + tw, ty);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      function drawGlider(px, py, bank) {
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(bank * 0.42);
+        const s = Math.min(W, H) * 0.0014;
+        ctx.scale(s, s);
+
+        // Drop shadow
+        ctx.fillStyle = 'rgba(2,6,23,0.22)';
+        ctx.beginPath();
+        ctx.ellipse(0, 58, 72, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Main swept wings (shaded metallic white + cyan trim)
+        const wingGrad = ctx.createLinearGradient(-130, 0, 130, 0);
+        wingGrad.addColorStop(0, '#cbd5e1');
+        wingGrad.addColorStop(0.5, '#ffffff');
+        wingGrad.addColorStop(1, '#94a3b8');
+        ctx.fillStyle = wingGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, -28);
+        ctx.lineTo(-140, 18);
+        ctx.lineTo(-128, 30);
+        ctx.lineTo(0, 6);
+        ctx.lineTo(128, 30);
+        ctx.lineTo(140, 18);
+        ctx.closePath();
+        ctx.fill();
+
+        // Wing accent stripes
+        ctx.fillStyle = '#0ea5e9';
+        ctx.fillRect(-105, 10, 42, 6);
+        ctx.fillRect(63, 10, 42, 6);
+
+        // Tail stabilizer
+        ctx.fillStyle = '#e2e8f0';
+        ctx.beginPath();
+        ctx.moveTo(0, 16);
+        ctx.lineTo(-40, 34);
+        ctx.lineTo(40, 34);
+        ctx.closePath();
+        ctx.fill();
+
+        // Fuselage + glass cockpit canopy
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.ellipse(0, 4, 14, 38, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        const canopy = ctx.createLinearGradient(0, -24, 0, 6);
+        canopy.addColorStop(0, '#38bdf8');
+        canopy.addColorStop(1, '#0f172a');
+        ctx.fillStyle = canopy;
+        ctx.beginPath();
+        ctx.ellipse(0, -10, 8, 16, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Vertical tail fin
+        ctx.fillStyle = '#f97316';
+        ctx.beginPath();
+        ctx.moveTo(0, 8);
+        ctx.lineTo(-3, 34);
+        ctx.lineTo(3, 34);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      let last = performance.now();
+      function loop(now) {
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        worldZ += speed * dt;
+
+        if (keys['ArrowLeft'] || keys['KeyA']) player.targetX -= 1.4 * dt;
+        if (keys['ArrowRight'] || keys['KeyD']) player.targetX += 1.4 * dt;
+        if (keys['ArrowUp'] || keys['KeyW']) player.targetY -= 1.1 * dt;
+        if (keys['ArrowDown'] || keys['KeyS']) player.targetY += 1.1 * dt;
+        player.targetX = Math.max(-0.85, Math.min(0.85, player.targetX));
+        player.targetY = Math.max(-0.35, Math.min(0.42, player.targetY));
+
+        const prevX = player.x;
+        player.x += (player.targetX - player.x) * Math.min(1, dt * 6.5);
+        player.y += (player.targetY - player.y) * Math.min(1, dt * 6.5);
+        player.bank += ((player.x - prevX) * 42 - player.bank) * Math.min(1, dt * 8);
+
+        const horizon = drawPaintedSky();
+        const fov = Math.min(W, H) * 0.9;
+
+        // Volumetric clouds
+        for (const c of clouds) {
+          c.z -= speed * 0.45 * dt;
+          if (c.z < 5) c.z += 280;
+          const sc = fov / c.z;
+          const sx = W * 0.5 + (c.x - player.x * 0.4) * sc * 8;
+          const sy = horizon + c.y * sc * 6;
+          const r = c.r * (sc / 18);
+          ctx.fillStyle = 'rgba(255,255,255,0.78)';
+          ctx.beginPath();
+          ctx.arc(sx, sy, r, 0, Math.PI * 2);
+          ctx.arc(sx + r * 0.75, sy + r * 0.15, r * 0.75, 0, Math.PI * 2);
+          ctx.arc(sx - r * 0.75, sy + r * 0.18, r * 0.7, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Sort & draw alpine pine forest back-to-front
+        for (const t of trees) {
+          t.z -= speed * dt;
+          if (t.z < 4) t.z += 260;
+        }
+        trees.sort((a, b) => b.z - a.z);
+        for (const t of trees) {
+          const sc = fov / t.z;
+          const sx = W * 0.5 + (t.x - player.x) * sc * 12;
+          const sy = horizon + (0.65 - player.y * 0.5) * sc * 4.5;
+          if (sx < -120 || sx > W + 120 || sy > H + 120) continue;
+          drawTree(sx, sy, sc * 2.2 * t.scale, t.shade);
+        }
+
+        // Golden floating rings
+        rings.sort((a, b) => b.z - a.z);
+        for (const r of rings) {
+          r.z -= speed * dt;
+          if (r.z < 8 && !r.hit) {
+            const dx = Math.abs(r.x - player.x);
+            const dy = Math.abs(r.y - player.y);
+            if (dx < 0.24 && dy < 0.22) {
+              r.hit = true;
+              r.flash = 1;
+              score++;
+              scoreEl.textContent = String(score);
+              speed = Math.min(46, speed + 0.6);
+            }
+          }
+          if (r.z < 3) {
+            r.z += 288;
+            r.x = (Math.sin(worldZ * 0.03 + r.z) * 0.58);
+            r.y = -0.14 + Math.cos(worldZ * 0.02 + r.z) * 0.24;
+            r.hit = false;
+          }
+          const sc = fov / r.z;
+          const sx = W * 0.5 + (r.x - player.x) * sc * 12;
+          const sy = horizon + (r.y - player.y) * sc * 8 + H * 0.08;
+          const rad = sc * 2.1;
+          ctx.strokeStyle = r.hit ? '#4ade80' : '#facc15';
+          ctx.lineWidth = Math.max(2, rad * 0.14);
+          ctx.beginPath();
+          ctx.arc(sx, sy, rad, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // Wingtip contrails
+        const gx = W * 0.5 + player.x * W * 0.28;
+        const gy = H * 0.68 + player.y * H * 0.26;
+        trailL.push({ x: gx - 95, y: gy + 12 });
+        trailR.push({ x: gx + 95, y: gy + 12 });
+        if (trailL.length > 22) { trailL.shift(); trailR.shift(); }
+        for (const tr of [trailL, trailR]) {
+          ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          tr.forEach((p, idx) => {
+            if (idx === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y + (tr.length - idx) * 2.2);
+          });
+          ctx.stroke();
+        }
+
+        drawGlider(gx, gy, player.bank);
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

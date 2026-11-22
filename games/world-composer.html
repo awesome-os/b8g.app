@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>World Composer — Build Your Own 3D Island | b8g.app</title>
+  <style>
+    :root {
+      --bg: #070c18;
+      --panel: rgba(11, 18, 32, 0.9);
+      --border: rgba(255,255,255,0.14);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --cyan: #38bdf8;
+      --gold: #facc15;
+      --green: #4ade80;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; user-select: none; }
+    canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+    .topbar {
+      position: fixed; top: 12px; left: 12px; right: 12px;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+      pointer-events: none;
+    }
+    .bar {
+      pointer-events: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+      padding: 8px 14px; backdrop-filter: blur(10px); font-size: 13px;
+    }
+    a { color: #fff; text-decoration: none; font-weight: 700; }
+    button {
+      background: rgba(255,255,255,0.08); color: #e2e8f0; border: 1px solid var(--border);
+      border-radius: 8px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+    button:hover { border-color: var(--cyan); color: #fff; }
+    button.active { background: var(--cyan); border-color: var(--cyan); color: #05101c; }
+    button.play { background: var(--green); border-color: var(--green); color: #052e16; }
+    .palette {
+      position: fixed; left: 12px; top: 72px; bottom: 62px; width: 176px;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+      padding: 10px; overflow-y: auto; backdrop-filter: blur(10px);
+      display: flex; flex-direction: column; gap: 7px;
+    }
+    .pal-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 2px 4px; }
+    .tool {
+      display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+      padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.05);
+      border: 1px solid transparent; color: #f1f5f9; font-size: 12.5px; font-weight: 700; cursor: pointer;
+    }
+    .tool:hover { border-color: rgba(56,189,248,0.5); }
+    .tool.active { background: rgba(56,189,248,0.2); border-color: var(--cyan); color: #fff; }
+    .drop-hint {
+      margin-top: auto; padding: 9px; border-radius: 10px; border: 1px dashed rgba(250,204,21,0.5);
+      background: rgba(250,204,21,0.08); font-size: 11px; color: #fde68a; line-height: 1.4;
+    }
+    .footer {
+      position: fixed; bottom: 12px; left: 12px; right: 12px;
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+      padding: 8px 14px; font-size: 12px; color: var(--muted); backdrop-filter: blur(10px);
+    }
+    .stat { color: var(--green); font-weight: 800; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div class="topbar">
+    <div class="bar"><a href="../index.html">← b8g.app</a><span style="color:var(--muted)">|</span><strong>Kids 3D World Composer</strong></div>
+    <div class="bar">
+      <button id="btnSky">Sky: Sunset</button>
+      <button id="btnPreset">Starter Town</button>
+      <button id="btnClear">Clear</button>
+      <button id="btnExport">Export Scene</button>
+    </div>
+  </div>
+
+  <aside class="palette" id="palette">
+    <div class="pal-title">Click Tile to Build</div>
+    <button class="tool active" data-kind="house">🏠 Cozy House</button>
+    <button class="tool" data-kind="tower">🏙️ Neon Tower</button>
+    <button class="tool" data-kind="pine">🌲 Pine Tree</button>
+    <button class="tool" data-kind="palm">🌴 Palm Tree</button>
+    <button class="tool" data-kind="car">🚗 Sports Car</button>
+    <button class="tool" data-kind="lamp">💡 Street Lamp</button>
+    <button class="tool" data-kind="ring">⭕ Sky Ring</button>
+    <button class="tool" data-kind="hero">🤖 Hero Bot</button>
+    <button class="tool" data-kind="erase">🧹 Eraser</button>
+    <div class="drop-hint" id="dropStatus">
+      Drop any CC0 <strong>.glb</strong> file (Kenney / Quaternius / KayKit) onto the island to inspect its live mesh &amp; CAS hash!
+    </div>
+  </aside>
+
+  <div class="footer">
+    <div>Left-click: Place · Right-click: Remove · Drag with Right/Middle or Arrows: Rotate View</div>
+    <div>CAS Dedup: <span class="stat" id="casStat">0 objects → 0 unique assets</span></div>
+  </div>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById('c');
+      const ctx = canvas.getContext('2d');
+      const casStat = document.getElementById('casStat');
+      const dropStatus = document.getElementById('dropStatus');
+
+      let W = 0, H = 0;
+      function resize() {
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        W = canvas.width = Math.floor(window.innerWidth * dpr);
+        H = canvas.height = Math.floor(window.innerHeight * dpr);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      const GRID = 9;
+      const cells = new Map();
+      let selected = 'house';
+      let skyMode = 1; // 0=day, 1=sunset, 2=night
+      const skyNames = ['Day', 'Sunset', 'Night'];
+      let hoverCell = null;
+      let camShiftX = 0;
+
+      function seedStarterTown() {
+        cells.clear();
+        const preset = [
+          [2,2,'house'], [2,4,'house'], [4,2,'tower'], [5,2,'tower'],
+          [3,5,'car'], [4,5,'car'], [1,1,'pine'], [1,3,'pine'], [1,6,'pine'],
+          [7,2,'palm'], [7,5,'palm'], [6,6,'palm'], [3,3,'lamp'], [5,4,'lamp'],
+          [4,4,'hero'], [6,3,'ring'], [2,6,'ring'],
+        ];
+        for (const [gx, gy, kind] of preset) cells.set(gx + ',' + gy, kind);
+        updateCasStats();
+      }
+
+      function updateCasStats() {
+        const total = cells.size;
+        const unique = new Set(cells.values()).size;
+        const saved = total > 0 ? Math.round(((total - unique) / total) * 100) : 0;
+        casStat.textContent = total + ' placed objects → ' + unique + ' unique CAS assets (' + saved + '% deduped)';
+      }
+
+      function isoProject(gx, gy) {
+        const s = Math.min(W, H) / 760;
+        const tileW = 44 * s;
+        const tileH = 22 * s;
+        const cx = W * 0.56 + camShiftX;
+        const cy = H * 0.34;
+        return {
+          x: cx + (gx - gy) * tileW,
+          y: cy + (gx + gy) * tileH,
+          s,
+          tileW,
+          tileH,
+        };
+      }
+
+      function screenToGrid(mx, my) {
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        const px = mx * dpr, py = my * dpr;
+        const s = Math.min(W, H) / 760;
+        const tileW = 44 * s, tileH = 22 * s;
+        const cx = W * 0.56 + camShiftX, cy = H * 0.34;
+        const dx = (px - cx) / tileW;
+        const dy = (py - cy) / tileH;
+        const gx = Math.floor((dx + dy) * 0.5);
+        const gy = Math.floor((dy - dx) * 0.5);
+        if (gx >= 0 && gx < GRID && gy >= 0 && gy < GRID) return { gx, gy };
+        return null;
+      }
+
+      function drawIsoBox(x, y, w, d, h, cTop, cLeft, cRight) {
+        ctx.fillStyle = cTop;
+        ctx.beginPath();
+        ctx.moveTo(x, y - h); ctx.lineTo(x + w, y - h + d); ctx.lineTo(x, y - h + d * 2); ctx.lineTo(x - w, y - h + d);
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = cLeft;
+        ctx.beginPath();
+        ctx.moveTo(x - w, y - h + d); ctx.lineTo(x, y - h + d * 2); ctx.lineTo(x, y + d * 2); ctx.lineTo(x - w, y + d);
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = cRight;
+        ctx.beginPath();
+        ctx.moveTo(x + w, y - h + d); ctx.lineTo(x, y - h + d * 2); ctx.lineTo(x, y + d * 2); ctx.lineTo(x + w, y + d);
+        ctx.closePath(); ctx.fill();
+      }
+
+      function drawAsset(kind, x, y, s, t) {
+        const lit = skyMode !== 0;
+        if (kind === 'house') {
+          drawIsoBox(x, y, 22 * s, 11 * s, 26 * s, '#fde68a', '#d97706', '#92400e');
+          ctx.fillStyle = '#dc2626';
+          ctx.beginPath();
+          ctx.moveTo(x, y - 44 * s); ctx.lineTo(x - 26 * s, y - 16 * s); ctx.lineTo(x, y - 4 * s); ctx.lineTo(x + 26 * s, y - 16 * s);
+          ctx.closePath(); ctx.fill();
+          ctx.fillStyle = lit ? '#fef08a' : '#7dd3fc';
+          ctx.fillRect(x - 14 * s, y - 10 * s, 7 * s, 8 * s);
+        } else if (kind === 'tower') {
+          drawIsoBox(x, y, 20 * s, 10 * s, 72 * s, '#38bdf8', '#1e3a8a', '#0f172a');
+          ctx.fillStyle = lit ? '#67e8f9' : '#93c5fd';
+          for (let r = 0; r < 5; r++) {
+            ctx.fillRect(x - 13 * s, y - (58 - r * 11) * s, 9 * s, 5 * s);
+            ctx.fillRect(x + 4 * s, y - (58 - r * 11) * s, 9 * s, 5 * s);
+          }
+        } else if (kind === 'pine') {
+          ctx.fillStyle = '#5c4033'; ctx.fillRect(x - 3 * s, y - 6 * s, 6 * s, 12 * s);
+          for (let k = 0; k < 3; k++) {
+            ctx.fillStyle = k % 2 ? '#16a34a' : '#15803d';
+            ctx.beginPath();
+            ctx.moveTo(x, y - (24 + k * 13) * s); ctx.lineTo(x - (18 - k * 4) * s, y - (6 + k * 11) * s); ctx.lineTo(x + (18 - k * 4) * s, y - (6 + k * 11) * s);
+            ctx.closePath(); ctx.fill();
+          }
+        } else if (kind === 'palm') {
+          ctx.strokeStyle = '#92400e'; ctx.lineWidth = 5 * s;
+          ctx.beginPath(); ctx.moveTo(x, y + 4 * s); ctx.quadraticCurveTo(x + 8 * s, y - 22 * s, x + 2 * s, y - 42 * s); ctx.stroke();
+          ctx.fillStyle = '#22c55e';
+          for (let a = 0; a < 5; a++) {
+            const ang = (a / 5) * Math.PI * 2 + Math.sin(t * 2) * 0.08;
+            ctx.beginPath();
+            ctx.ellipse(x + 2 * s + Math.cos(ang) * 14 * s, y - 42 * s + Math.sin(ang) * 6 * s, 14 * s, 4 * s, ang, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        } else if (kind === 'car') {
+          const bob = Math.sin(t * 6) * 1.2 * s;
+          drawIsoBox(x, y + bob, 18 * s, 9 * s, 11 * s, '#f43f5e', '#e11d48', '#881337');
+          drawIsoBox(x, y - 10 * s + bob, 11 * s, 6 * s, 8 * s, '#7dd3fc', '#38bdf8', '#0284c7');
+        } else if (kind === 'lamp') {
+          ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 3 * s;
+          ctx.beginPath(); ctx.moveTo(x, y + 4 * s); ctx.lineTo(x, y - 34 * s); ctx.stroke();
+          ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.arc(x, y - 36 * s, 5 * s, 0, Math.PI * 2); ctx.fill();
+          if (lit) {
+            const g = ctx.createRadialGradient(x, y - 36 * s, 2, x, y - 36 * s, 28 * s);
+            g.addColorStop(0, 'rgba(254,240,138,0.65)'); g.addColorStop(1, 'rgba(254,240,138,0)');
+            ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y - 36 * s, 28 * s, 0, Math.PI * 2); ctx.fill();
+          }
+        } else if (kind === 'ring') {
+          const fy = y - 26 * s + Math.sin(t * 3.2) * 5 * s;
+          ctx.strokeStyle = '#facc15'; ctx.lineWidth = 4.5 * s;
+          ctx.beginPath(); ctx.arc(x, fy, 16 * s, 0, Math.PI * 2); ctx.stroke();
+        } else if (kind === 'hero') {
+          const hop = Math.abs(Math.sin(t * 4)) * 7 * s;
+          drawIsoBox(x, y - hop, 10 * s, 6 * s, 18 * s, '#4ade80', '#16a34a', '#14532d');
+          ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(x, y - 24 * s - hop, 9 * s, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#38bdf8'; ctx.fillRect(x - 5 * s, y - 27 * s - hop, 10 * s, 4 * s);
+        }
+      }
+
+      // Drag-and-drop real CC0 .glb binary parser right in the browser!
+      window.addEventListener('dragover', (e) => e.preventDefault());
+      window.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (!file) return;
+        const buf = new Uint8Array(await file.arrayBuffer());
+        const dv = new DataView(buf.buffer);
+        if (buf.byteLength >= 20 && dv.getUint32(0, true) === 0x46546c67) {
+          const jsonLen = dv.getUint32(12, true);
+          const json = JSON.parse(new TextDecoder().decode(buf.subarray(20, 20 + jsonLen)).replace(/ +$/, ''));
+          const meshes = (json.meshes || []).length;
+          const skins = (json.skins || []).length;
+          const anims = (json.animations || []).length;
+          dropStatus.innerHTML = '<strong>Loaded CC0 GLB:</strong> ' + file.name + '<br/>' + meshes + ' mesh(es), ' + skins + ' rig(s), ' + anims + ' anim(s) (' + (buf.byteLength / 1024).toFixed(1) + ' KB)';
+        } else {
+          dropStatus.textContent = 'Not a binary .glb file — try a Kenney / Quaternius .glb!';
+        }
+      });
+
+      document.querySelectorAll('.tool').forEach((b) => {
+        b.onclick = () => {
+          document.querySelectorAll('.tool').forEach((x) => x.classList.remove('active'));
+          b.classList.add('active');
+          selected = b.dataset.kind;
+        };
+      });
+      document.getElementById('btnSky').onclick = (e) => {
+        skyMode = (skyMode + 1) % 3;
+        e.target.textContent = 'Sky: ' + skyNames[skyMode];
+      };
+      document.getElementById('btnPreset').onclick = seedStarterTown;
+      document.getElementById('btnClear').onclick = () => { cells.clear(); updateCasStats(); };
+      document.getElementById('btnExport').onclick = () => {
+        const recipe = { format: 'b8g-world-v1', sky: skyNames[skyMode], cells: Object.fromEntries(cells) };
+        const blob = new Blob([JSON.stringify(recipe, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'my-b8g-world.json';
+        a.click();
+      };
+
+      canvas.addEventListener('mousemove', (e) => { hoverCell = screenToGrid(e.clientX, e.clientY); });
+      canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+      canvas.addEventListener('mousedown', (e) => {
+        const c = screenToGrid(e.clientX, e.clientY);
+        if (!c) return;
+        const key = c.gx + ',' + c.gy;
+        if (e.button === 2 || selected === 'erase') cells.delete(key);
+        else cells.set(key, selected);
+        updateCasStats();
+      });
+
+      seedStarterTown();
+
+      let t = 0;
+      function loop() {
+        t += 0.016;
+        const sky = ctx.createLinearGradient(0, 0, 0, H);
+        if (skyMode === 0) { sky.addColorStop(0, '#0284c7'); sky.addColorStop(1, '#bae6fd'); }
+        else if (skyMode === 1) { sky.addColorStop(0, '#1e1b4b'); sky.addColorStop(0.55, '#c2410c'); sky.addColorStop(1, '#fde68a'); }
+        else { sky.addColorStop(0, '#020617'); sky.addColorStop(1, '#1e293b'); }
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, W, H);
+
+        // Draw isometric grid back-to-front
+        for (let gx = 0; gx < GRID; gx++) {
+          for (let gy = 0; gy < GRID; gy++) {
+            const p = isoProject(gx, gy);
+            const isHover = hoverCell && hoverCell.gx === gx && hoverCell.gy === gy;
+            const checker = (gx + gy) % 2 === 0;
+            const topCol = isHover
+              ? '#38bdf8'
+              : skyMode === 2
+                ? (checker ? '#14532d' : '#166534')
+                : (checker ? '#22c55e' : '#16a34a');
+            drawIsoBox(p.x, p.y, p.tileW, p.tileH, 10 * p.s, topCol, '#57534e', '#44403c');
+            const kind = cells.get(gx + ',' + gy);
+            if (kind) drawAsset(kind, p.x, p.y - 8 * p.s, p.s, t);
+          }
+        }
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

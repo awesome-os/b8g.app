@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cozy Village — Living Isometric Diorama | b8g.app</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #0b1120; font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; user-select: none; }
+    canvas { display: block; width: 100%; height: 100%; cursor: pointer; }
+    .hud {
+      position: fixed; top: 16px; left: 16px; right: 16px;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+      pointer-events: none;
+    }
+    .bar {
+      pointer-events: auto; display: flex; gap: 8px; align-items: center;
+      background: rgba(15, 23, 42, 0.78); border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 14px; padding: 8px 14px; backdrop-filter: blur(10px); color: #fff;
+    }
+    a { color: #fff; text-decoration: none; font-weight: 600; font-size: 13px; }
+    button {
+      background: rgba(255,255,255,0.08); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    button.active, button:hover { background: #f59e0b; border-color: #fbbf24; color: #0f172a; }
+    .tip {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.78); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 999px; padding: 8px 18px; font-size: 13px; backdrop-filter: blur(8px);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div class="hud">
+    <div class="bar"><a href="../index.html">← b8g.app</a></div>
+    <div class="bar">
+      <button data-time="day">Morning</button>
+      <button data-time="sunset" class="active">Golden Sunset</button>
+      <button data-time="night">Starry Night</button>
+    </div>
+  </div>
+  <div class="tip">Click anywhere on the island to release floating sky lanterns!</div>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById('c');
+      const ctx = canvas.getContext('2d');
+      let W = 0, H = 0;
+      function resize() {
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        W = canvas.width = Math.floor(window.innerWidth * dpr);
+        H = canvas.height = Math.floor(window.innerHeight * dpr);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      let mode = 'sunset';
+      document.querySelectorAll('[data-time]').forEach((b) => {
+        b.onclick = () => {
+          document.querySelectorAll('[data-time]').forEach((x) => x.classList.remove('active'));
+          b.classList.add('active');
+          mode = b.dataset.time;
+        };
+      });
+
+      const lanterns = [];
+      for (let i = 0; i < 16; i++) {
+        lanterns.push({ x: Math.random(), y: 0.25 + Math.random() * 0.55, vy: 0.015 + Math.random() * 0.02, phase: Math.random() * 6.28 });
+      }
+      const smoke = [];
+      canvas.addEventListener('click', (e) => {
+        lanterns.push({ x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight, vy: 0.025 + Math.random() * 0.02, phase: Math.random() * 6.28 });
+      });
+
+      function drawIsoBox(cx, cy, w, d, h, topCol, leftCol, rightCol) {
+        ctx.fillStyle = topCol;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - h);
+        ctx.lineTo(cx + w, cy - h + d * 0.5);
+        ctx.lineTo(cx, cy - h + d);
+        ctx.lineTo(cx - w, cy - h + d * 0.5);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = leftCol;
+        ctx.beginPath();
+        ctx.moveTo(cx - w, cy - h + d * 0.5);
+        ctx.lineTo(cx, cy - h + d);
+        ctx.lineTo(cx, cy + d);
+        ctx.lineTo(cx - w, cy + d * 0.5);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = rightCol;
+        ctx.beginPath();
+        ctx.moveTo(cx + w, cy - h + d * 0.5);
+        ctx.lineTo(cx, cy - h + d);
+        ctx.lineTo(cx, cy + d);
+        ctx.lineTo(cx + w, cy + d * 0.5);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function drawCabin(cx, cy, s, lit) {
+        drawIsoBox(cx, cy, 48 * s, 44 * s, 46 * s, '#92400e', '#78350f', '#451a03');
+        // Pitched stylized roof
+        ctx.fillStyle = '#b91c1c';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 76 * s);
+        ctx.lineTo(cx - 56 * s, cy - 22 * s);
+        ctx.lineTo(cx, cy + 4 * s);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#991b1b';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 76 * s);
+        ctx.lineTo(cx + 56 * s, cy - 22 * s);
+        ctx.lineTo(cx, cy + 4 * s);
+        ctx.closePath();
+        ctx.fill();
+
+        // Warm glowing windows
+        ctx.fillStyle = lit ? '#fde047' : '#93c5fd';
+        ctx.fillRect(cx - 32 * s, cy - 8 * s, 14 * s, 16 * s);
+        ctx.fillRect(cx + 16 * s, cy - 6 * s, 14 * s, 16 * s);
+      }
+
+      function drawPine(cx, cy, s, sway) {
+        ctx.fillStyle = '#5c4033';
+        ctx.fillRect(cx - 4 * s, cy - 12 * s, 8 * s, 16 * s);
+        const cols = mode === 'night' ? ['#064e3b', '#065f46'] : ['#15803d', '#16a34a'];
+        for (let k = 0; k < 3; k++) {
+          ctx.fillStyle = cols[k % 2];
+          ctx.beginPath();
+          ctx.moveTo(cx + sway * (k + 1), cy - (32 + k * 18) * s);
+          ctx.lineTo(cx - (24 - k * 5) * s, cy - (10 + k * 14) * s);
+          ctx.lineTo(cx + (24 - k * 5) * s, cy - (10 + k * 14) * s);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      let t = 0;
+      function frame() {
+        t += 0.016;
+        const sky = ctx.createLinearGradient(0, 0, 0, H);
+        if (mode === 'day') { sky.addColorStop(0, '#0284c7'); sky.addColorStop(1, '#bae6fd'); }
+        else if (mode === 'sunset') { sky.addColorStop(0, '#1e1b4b'); sky.addColorStop(0.55, '#c2410c'); sky.addColorStop(1, '#fde68a'); }
+        else { sky.addColorStop(0, '#020617'); sky.addColorStop(1, '#1e293b'); }
+        ctx.fillStyle = sky;
+        ctx.fillRect(0, 0, W, H);
+
+        // Twinkling stars at night/sunset
+        if (mode !== 'day') {
+          ctx.fillStyle = 'rgba(255,255,255,0.8)';
+          for (let i = 0; i < 60; i++) {
+            const sx = ((i * 197) % 1000) / 1000 * W;
+            const sy = ((i * 83) % 450) / 1000 * H;
+            const a = 0.35 + 0.65 * Math.abs(Math.sin(t * 2 + i));
+            ctx.globalAlpha = mode === 'night' ? a : a * 0.4;
+            ctx.fillRect(sx, sy, 2.5, 2.5);
+          }
+          ctx.globalAlpha = 1;
+        }
+
+        const cx = W * 0.5, cy = H * 0.62;
+        const s = Math.min(W, H) / 760;
+
+        // Floating alpine island base
+        drawIsoBox(cx, cy + 40 * s, 260 * s, 210 * s, 54 * s,
+          mode === 'night' ? '#14532d' : '#22c55e',
+          '#57534e', '#44403c'
+        );
+
+        // Animated waterfall + pond
+        ctx.fillStyle = mode === 'night' ? '#0284c7' : '#38bdf8';
+        ctx.beginPath();
+        ctx.ellipse(cx + 68 * s, cy + 72 * s, 72 * s, 32 * s, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(186,230,253,0.75)';
+        for (let k = 0; k < 5; k++) {
+          const wy = cy + 92 * s + ((t * 90 + k * 28) % 140) * s;
+          ctx.fillRect(cx + 112 * s + Math.sin(t * 4 + k) * 4, wy, 24 * s, 14 * s);
+        }
+
+        // Cozy wooden cabins
+        const lit = mode !== 'day';
+        drawCabin(cx - 75 * s, cy + 28 * s, s * 1.05, lit);
+        drawCabin(cx + 42 * s, cy - 8 * s, s * 0.85, lit);
+
+        // Chimney smoke puffs
+        if (Math.random() < 0.14) smoke.push({ x: cx - 54 * s, y: cy - 42 * s, r: 8 * s, a: 0.65 });
+        for (let i = smoke.length - 1; i >= 0; i--) {
+          const p = smoke[i];
+          p.y -= 0.7 * s; p.x += Math.sin(t + i) * 0.3 * s; p.r += 0.12 * s; p.a -= 0.006;
+          if (p.a <= 0) { smoke.splice(i, 1); continue; }
+          ctx.fillStyle = 'rgba(226,232,240,' + p.a.toFixed(2) + ')';
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Swaying stylized pine forest
+        const sway = Math.sin(t * 1.8) * 3.5 * s;
+        [[-165, 55, 0.9], [-125, 18, 1.1], [-15, -35, 1.0], [135, 18, 1.15], [168, 52, 0.85], [-10, 95, 0.95]].forEach(([ox, oy, sc]) => {
+          drawPine(cx + ox * s, cy + oy * s, s * sc, sway);
+        });
+
+        // Glowing floating sky lanterns
+        for (const l of lanterns) {
+          l.y -= l.vy * 0.016;
+          if (l.y < -0.05) l.y = 1.05;
+          const lx = l.x * W + Math.sin(t * 1.5 + l.phase) * 18;
+          const ly = l.y * H;
+          const g = ctx.createRadialGradient(lx, ly, 2, lx, ly, 26);
+          g.addColorStop(0, 'rgba(254,240,138,0.95)');
+          g.addColorStop(0.4, 'rgba(251,146,60,0.45)');
+          g.addColorStop(1, 'rgba(251,146,60,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(lx, ly, 26, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#fef08a';
+          ctx.fillRect(lx - 4, ly - 6, 8, 11);
+        }
+
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1723 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>B8G Vibe-to-Verified Studio — Consumer App Builder | b8g.app</title>
+  <style>
+    :root {
+      --bg: #050811;
+      --bg-elev: #0b1120;
+      --panel: #0f172a;
+      --card: #131d31;
+      --border: #1e293b;
+      --border-hi: #38bdf866;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --cyan: #38bdf8;
+      --emerald: #4ade80;
+      --amber: #fbbf24;
+      --rose: #fb7185;
+      --violet: #a78bfa;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      background-image:
+        radial-gradient(circle at 10% 0%, rgba(56, 189, 248, 0.12), transparent 36%),
+        radial-gradient(circle at 90% 0%, rgba(74, 222, 128, 0.08), transparent 34%);
+    }
+
+    /* Top Bar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 10px 16px;
+      background: rgba(11, 17, 32, 0.92);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      z-index: 20;
+    }
+    .topbar-left, .topbar-mid, .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 11px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: #e2e8f0;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 12px;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    .back-link:hover { border-color: var(--cyan); color: #fff; }
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      font-size: 15px;
+    }
+    .brand-pill {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .select-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 8px;
+    }
+    .select-group label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    select {
+      background: transparent;
+      color: #f8fafc;
+      border: none;
+      outline: none;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    select option { background: #0f172a; color: #f8fafc; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: #f8fafc;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.15s ease, filter 0.15s ease;
+    }
+    .btn:hover { border-color: var(--cyan); transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-primary {
+      background: linear-gradient(135deg, #0ea5e9, #10b981);
+      border: none;
+      color: #041019;
+    }
+    .btn-primary:hover { filter: brightness(1.08); }
+    .btn-fix {
+      background: linear-gradient(135deg, #f59e0b, #fb7185);
+      border: none;
+      color: #1c0b05;
+    }
+    .btn-fix:hover { filter: brightness(1.08); }
+    .btn-subtle {
+      background: rgba(56, 189, 248, 0.1);
+      border-color: rgba(56, 189, 248, 0.3);
+      color: var(--cyan);
+    }
+
+    /* Main 3-Column Studio Workspace */
+    .workspace {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 350px minmax(360px, 1fr) minmax(360px, 1.05fr);
+      gap: 1px;
+      background: var(--border);
+    }
+    @media (max-width: 1180px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+      }
+      .pane { min-height: 460px; }
+    }
+    .pane {
+      background: var(--bg-elev);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .pane-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.72);
+    }
+    .pane-title {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .pane-body {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Left Panel: Intent, Blueprints, Telemetry */
+    .intent-box {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .intent-box textarea {
+      width: 100%;
+      min-height: 76px;
+      resize: vertical;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #f8fafc;
+      font-family: var(--sans);
+      font-size: 13px;
+      outline: none;
+    }
+    .intent-box textarea:focus { border-color: var(--cyan); }
+    .intent-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .blueprint-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .bp-btn {
+      text-align: left;
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: #f8fafc;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      transition: border-color 0.15s ease, transform 0.12s ease;
+    }
+    .bp-btn:hover { border-color: var(--cyan); transform: translateY(-1px); }
+    .bp-btn.active { border-color: var(--emerald); background: rgba(74, 222, 128, 0.08); }
+    .bp-btn.broken-bp { border-color: rgba(251, 113, 133, 0.4); }
+    .bp-btn.broken-bp:hover { border-color: var(--rose); }
+    .bp-name { font-size: 12px; font-weight: 700; }
+    .bp-sub { font-size: 11px; color: var(--muted); }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 4px;
+    }
+
+    /* Telemetry Pass Strip */
+    .telemetry-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .pass-strip {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+    .pass-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 9px;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border);
+    }
+    .pass-item.pass-ok { border-color: rgba(74, 222, 128, 0.45); color: var(--emerald); }
+    .pass-item.pass-err { border-color: rgba(251, 113, 133, 0.45); color: var(--rose); }
+    .pass-item.pass-fix { border-color: rgba(251, 191, 36, 0.45); color: var(--amber); }
+
+    /* ErrorDelta Cards */
+    .delta-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .delta-card {
+      background: rgba(251, 113, 133, 0.07);
+      border: 1px solid rgba(251, 113, 133, 0.35);
+      border-radius: 10px;
+      padding: 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .delta-card.ok {
+      background: rgba(74, 222, 128, 0.08);
+      border-color: rgba(74, 222, 128, 0.35);
+      color: var(--emerald);
+    }
+    .delta-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .delta-rule {
+      font-weight: 800;
+      color: var(--rose);
+    }
+    .delta-line {
+      color: var(--amber);
+      font-weight: 700;
+    }
+    .delta-inv { color: #e2e8f0; }
+    .delta-fix { color: var(--cyan); }
+
+    /* Savings Meter */
+    .meter-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .meter-row {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .meter-row strong { color: var(--emerald); }
+    .bar-track {
+      height: 7px;
+      border-radius: 999px;
+      background: #1e293b;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      width: 98.8%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--cyan), var(--emerald));
+      transition: width 0.25s ease;
+    }
+
+    /* Center Panel: Live Source Editor */
+    .status-pill {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+    }
+    .status-ok {
+      background: rgba(74, 222, 128, 0.14);
+      border-color: rgba(74, 222, 128, 0.4);
+      color: var(--emerald);
+    }
+    .status-err {
+      background: rgba(251, 113, 133, 0.14);
+      border-color: rgba(251, 113, 133, 0.45);
+      color: var(--rose);
+    }
+    .editor-wrap {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    #sourceEditor {
+      flex: 1;
+      width: 100%;
+      min-height: 360px;
+      background: #060a14;
+      color: #e2e8f0;
+      border: none;
+      outline: none;
+      resize: none;
+      padding: 14px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.55;
+      tab-size: 2;
+    }
+    .editor-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 7px 14px;
+      border-top: 1px solid var(--border);
+      background: var(--panel);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* Right Panel: Sandboxed Preview */
+    .preview-tools {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .vp-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-family: var(--mono);
+      font-size: 10px;
+      cursor: pointer;
+    }
+    .vp-btn.active { color: #fff; border-color: var(--cyan); }
+    .preview-stage {
+      flex: 1;
+      min-height: 0;
+      background: #02040a;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 10px;
+      position: relative;
+    }
+    #previewFrame {
+      width: 100%;
+      height: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #0b1120;
+      transition: width 0.2s ease;
+    }
+    #previewFrame.mobile {
+      width: 390px;
+      max-width: 100%;
+    }
+    .preview-banner {
+      position: absolute;
+      bottom: 18px;
+      right: 18px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid var(--border);
+      color: var(--emerald);
+      pointer-events: none;
+    }
+    .preview-banner.blocked { color: var(--rose); border-color: rgba(251, 113, 133, 0.45); }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <a class="back-link" href="./index.html">&larr; b8g.app</a>
+      <div class="brand-title">
+        <span>B8G Vibe-to-Verified Studio</span>
+        <span class="brand-pill">Offline Boundary Loop</span>
+      </div>
+    </div>
+
+    <div class="topbar-mid">
+      <div class="select-group">
+        <label for="stackSelect">Stack</label>
+        <select id="stackSelect">
+          <option value="vanilla">Vanilla Web App</option>
+          <option value="react">React + Vite</option>
+          <option value="node">Node/TS API</option>
+          <option value="fastapi">Python FastAPI</option>
+          <option value="docker">Docker / OCI</option>
+          <option value="edge">Cloudflare Edge</option>
+        </select>
+      </div>
+      <div class="select-group">
+        <label for="modelSelect">Loop</label>
+        <select id="modelSelect">
+          <option value="inkling2">Inkling 2 Mini (Local 20GB)</option>
+          <option value="xenon1b">B8G Xenon 1B (Edge)</option>
+          <option value="byok">Any Local LLM / BYOK</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <button class="btn btn-primary" id="runLoopBtn" type="button">Run Verified Loop</button>
+      <button class="btn btn-fix" id="autoFixBtn" type="button">1-Click Auto-Fix</button>
+      <button class="btn btn-subtle" id="downloadBtn" type="button">Download Ready-to-Deploy HTML</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <!-- Left Panel: Intent & Bounded Error-Loop Telemetry -->
+    <section class="pane">
+      <div class="pane-head">
+        <span class="pane-title">1. Intent &amp; Bounded Loop</span>
+        <span id="stackBadge" style="font-family:var(--mono);font-size:10px;color:var(--cyan)">VANILLA WEB</span>
+      </div>
+      <div class="pane-body">
+        <div class="intent-box">
+          <div class="section-label">Plain-English Consumer Intent</div>
+          <textarea id="intentInput" placeholder="Describe the app you want (e.g. 'Build a dark glass weather dashboard with city switcher and C/F toggle')...">Build a dark-glass Weather Dashboard with city switcher, hourly forecast chart, and C/F unit toggle.</textarea>
+          <div class="intent-actions">
+            <span style="font-size:11px;color:var(--muted)" id="modelHint">Local Inkling 2 Mini · 0 cloud leakage</span>
+            <button class="btn" id="synthBtn" type="button">Synthesize Draft</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">1-Click Consumer Starter Blueprints</div>
+          <div class="blueprint-grid">
+            <button class="bp-btn active" data-bp="weather" type="button">
+              <span class="bp-name">Weather Dashboard</span>
+              <span class="bp-sub">Live SVG curve + C/F toggle</span>
+            </button>
+            <button class="bp-btn" data-bp="portfolio" type="button">
+              <span class="bp-name">Portfolio Landing Page</span>
+              <span class="bp-sub">Filterable work + copy toast</span>
+            </button>
+            <button class="bp-btn" data-bp="card3d" type="button">
+              <span class="bp-name">Interactive 3D Card</span>
+              <span class="bp-sub">Pointer tilt + holo glare</span>
+            </button>
+            <button class="bp-btn broken-bp" data-bp="broken" type="button">
+              <span class="bp-name">Broken App (Test Loop)</span>
+              <span class="bp-sub">3 defects &rarr; Auto-Repair</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="telemetry-card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="section-label" style="margin:0">Bounded Error-Loop Telemetry</div>
+            <span id="latencyBadge" style="font-family:var(--mono);font-size:11px;color:var(--emerald)">0.0 ms</span>
+          </div>
+          <div class="pass-strip" id="passStrip"></div>
+          <div class="delta-list" id="deltaList"></div>
+        </div>
+
+        <div class="meter-card">
+          <div class="section-label" style="margin:0">Token &amp; Latency Savings vs. Blind Cloud</div>
+          <div class="meter-row">
+            <span>Compressed ErrorDelta</span>
+            <strong id="deltaTokens">0 tok</strong>
+          </div>
+          <div class="meter-row">
+            <span>Blind Cloud Re-Prompt</span>
+            <span style="color:var(--rose)">~4,200 tok / ~8,500 ms</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" id="savingsBar"></div></div>
+          <div class="meter-row">
+            <span>Local Boundary Efficiency</span>
+            <strong id="savingsPct">98.9% saved</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Center Panel: Live Source Editor -->
+    <section class="pane">
+      <div class="pane-head">
+        <span class="pane-title">2. Live Source Editor</span>
+        <span id="verifyStatus" class="status-pill status-ok">VERIFIED · 0 ERRORS</span>
+      </div>
+      <div class="editor-wrap">
+        <textarea id="sourceEditor" spellcheck="false"></textarea>
+        <div class="editor-foot">
+          <span id="editorMeta">0 lines · 0 KB</span>
+          <span>Checks: JS AST · HTML Balance · Link Closure · Secret Scan</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Panel: Live Sandboxed Preview -->
+    <section class="pane">
+      <div class="pane-head">
+        <span class="pane-title">3. Sandboxed Live Preview</span>
+        <div class="preview-tools">
+          <button class="vp-btn active" id="vpDesktop" type="button">Desktop</button>
+          <button class="vp-btn" id="vpMobile" type="button">Mobile 390px</button>
+        </div>
+      </div>
+      <div class="preview-stage">
+        <iframe id="previewFrame" sandbox="allow-scripts" title="Verified Consumer App Preview"></iframe>
+        <div id="previewBanner" class="preview-banner">PASS · Live Sandbox Rendered</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const S_OPEN = '<' + 'scr' + 'ipt>';
+      const S_CLOSE = '</' + 'scr' + 'ipt>';
+      const SCRIPT_BLOCK_RE = new RegExp('<' + 'scr' + 'ipt\\b[^>]*>([\\s\\S]*?)<\\/' + 'scr' + 'ipt>', 'gi');
+
+      const editor = document.getElementById('sourceEditor');
+      const intentInput = document.getElementById('intentInput');
+      const stackSelect = document.getElementById('stackSelect');
+      const modelSelect = document.getElementById('modelSelect');
+      const stackBadge = document.getElementById('stackBadge');
+      const modelHint = document.getElementById('modelHint');
+      const verifyStatus = document.getElementById('verifyStatus');
+      const editorMeta = document.getElementById('editorMeta');
+      const latencyBadge = document.getElementById('latencyBadge');
+      const passStrip = document.getElementById('passStrip');
+      const deltaList = document.getElementById('deltaList');
+      const deltaTokens = document.getElementById('deltaTokens');
+      const savingsPct = document.getElementById('savingsPct');
+      const savingsBar = document.getElementById('savingsBar');
+      const previewFrame = document.getElementById('previewFrame');
+      const previewBanner = document.getElementById('previewBanner');
+
+      const STACK_META = {
+        vanilla: { label: 'VANILLA WEB', note: 'Zero-build single-file HTML/CSS/JS' },
+        react: { label: 'REACT + VITE', note: 'Component state + ESM boundary' },
+        node: { label: 'NODE/TS API', note: 'Typed handler + JSON contract' },
+        fastapi: { label: 'PYTHON FASTAPI', note: 'Pydantic schema + interactive docs UI' },
+        docker: { label: 'DOCKER / OCI', note: 'Hermetic container + health probe UI' },
+        edge: { label: 'CLOUDFLARE EDGE', note: 'Zero-cold-start Worker preview' }
+      };
+
+      const MODEL_META = {
+        inkling2: 'Local Inkling 2 Mini (20GB) · 0 cloud leakage',
+        xenon1b: 'B8G Xenon 1B (Edge) · sub-15ms repair tokens',
+        byok: 'BYOK Local LLM · OpenAI-compatible local endpoint'
+      };
+
+      function buildWeatherBlueprint() {
+        return [
+          '<!doctype html>',
+          '<html lang="en">',
+          '<head>',
+          '  <meta charset="utf-8" />',
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <title>Aurora Weather Dashboard</title>',
+          '  <style>',
+          '    * { box-sizing: border-box; margin: 0; padding: 0; }',
+          '    body { min-height: 100vh; font-family: Inter, system-ui, sans-serif; color: #f8fafc; background: radial-gradient(circle at 20% 10%, #0ea5e933, transparent 45%), #070d19; padding: 24px; }',
+          '    .shell { max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }',
+          '    .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }',
+          '    .tabs { display: flex; gap: 8px; flex-wrap: wrap; }',
+          '    button { background: #111c33; color: #cbd5e1; border: 1px solid #243452; border-radius: 10px; padding: 8px 14px; font-weight: 700; cursor: pointer; }',
+          '    button.active { background: linear-gradient(135deg, #38bdf8, #34d399); color: #041019; border-color: transparent; }',
+          '    .hero { background: rgba(15, 23, 42, 0.85); border: 1px solid #243452; border-radius: 18px; padding: 22px; }',
+          '    .temp { font-size: 56px; font-weight: 900; letter-spacing: -0.04em; background: linear-gradient(90deg, #fff, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }',
+          '    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }',
+          '    .stat { background: #0b1324; border: 1px solid #1e293b; border-radius: 12px; padding: 12px; }',
+          '    .stat span { display: block; font-size: 11px; color: #94a3b8; text-transform: uppercase; }',
+          '    .stat strong { font-size: 18px; color: #e2e8f0; }',
+          '    svg { width: 100%; height: 110px; margin-top: 14px; }',
+          '  </style>',
+          '</head>',
+          '<body>',
+          '  <main class="shell">',
+          '    <div class="row">',
+          '      <div class="tabs" id="cityTabs"></div>',
+          '      <button id="unitBtn" type="button">Switch to F</button>',
+          '    </div>',
+          '    <section class="hero">',
+          '      <div class="row">',
+          '        <div>',
+          '          <h1 id="cityName" style="font-size:22px">Zurich</h1>',
+          '          <p id="condText" style="color:#94a3b8;font-size:13px">Crisp Alpine Sun</p>',
+          '        </div>',
+          '        <div class="temp" id="tempVal">19 C</div>',
+          '      </div>',
+          '      <svg id="curve" viewBox="0 0 600 110"></svg>',
+          '      <div class="stats">',
+          '        <div class="stat"><span>Humidity</span><strong id="humVal">48%</strong></div>',
+          '        <div class="stat"><span>Wind</span><strong id="windVal">12 km/h</strong></div>',
+          '        <div class="stat"><span>UV Index</span><strong id="uvVal">4 Moderate</strong></div>',
+          '      </div>',
+          '    </section>',
+          '  </main>',
+          '  ' + S_OPEN,
+          '    const CITIES = [',
+          '      { name: "Zurich", cond: "Crisp Alpine Sun", c: 19, hum: "48%", wind: "12 km/h", uv: "4 Moderate", hrs: [14, 16, 18, 19, 20, 17, 15] },',
+          '      { name: "Tokyo", cond: "Clear Harbor Breeze", c: 24, hum: "56%", wind: "16 km/h", uv: "6 High", hrs: [20, 22, 24, 25, 24, 22, 21] },',
+          '      { name: "Reykjavik", cond: "Nordic Mist", c: 9, hum: "74%", wind: "22 km/h", uv: "1 Low", hrs: [7, 8, 9, 10, 9, 8, 7] }',
+          '    ];',
+          '    let idx = 0;',
+          '    let metric = true;',
+          '    function fmt(c) { return metric ? c + " C" : Math.round(c * 9 / 5 + 32) + " F"; }',
+          '    function render() {',
+          '      const city = CITIES[idx];',
+          '      document.getElementById("cityName").textContent = city.name;',
+          '      document.getElementById("condText").textContent = city.cond;',
+          '      document.getElementById("tempVal").textContent = fmt(city.c);',
+          '      document.getElementById("humVal").textContent = city.hum;',
+          '      document.getElementById("windVal").textContent = city.wind;',
+          '      document.getElementById("uvVal").textContent = city.uv;',
+          '      document.getElementById("unitBtn").textContent = metric ? "Switch to F" : "Switch to C";',
+          '      const pts = city.hrs.map(function (v, i) {',
+          '        const x = 20 + i * 93;',
+          '        const y = 92 - (v - 4) * 3.1;',
+          '        return x + "," + y.toFixed(1);',
+          '      }).join(" ");',
+          '      document.getElementById("curve").innerHTML = "<polyline fill=\\"none\\" stroke=\\"#38bdf8\\" stroke-width=\\"4\\" stroke-linecap=\\"round\\" points=\\"" + pts + "\\" />";',
+          '      const tabs = document.getElementById("cityTabs");',
+          '      tabs.innerHTML = "";',
+          '      CITIES.forEach(function (c, i) {',
+          '        const b = document.createElement("button");',
+          '        b.textContent = c.name;',
+          '        if (i === idx) b.className = "active";',
+          '        b.onclick = function () { idx = i; render(); };',
+          '        tabs.appendChild(b);',
+          '      });',
+          '    }',
+          '    document.getElementById("unitBtn").onclick = function () { metric = !metric; render(); };',
+          '    render();',
+          '  ' + S_CLOSE,
+          '</body>',
+          '</html>'
+        ].join('\n');
+      }
+
+      function buildPortfolioBlueprint() {
+        return [
+          '<!doctype html>',
+          '<html lang="en">',
+          '<head>',
+          '  <meta charset="utf-8" />',
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <title>Nova Studio — Creator Portfolio</title>',
+          '  <style>',
+          '    * { box-sizing: border-box; margin: 0; padding: 0; }',
+          '    body { min-height: 100vh; font-family: Inter, system-ui, sans-serif; color: #f8fafc; background: radial-gradient(circle at 80% 0%, #a855f733, transparent 42%), #070a14; padding: 28px; }',
+          '    .wrap { max-width: 700px; margin: 0 auto; }',
+          '    .pill { display: inline-block; font-size: 11px; font-weight: 700; color: #4ade80; background: #4ade801a; border: 1px solid #4ade8055; padding: 3px 10px; border-radius: 999px; margin-bottom: 12px; }',
+          '    h1 { font-size: 34px; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 10px; }',
+          '    p.sub { color: #94a3b8; margin-bottom: 20px; }',
+          '    .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }',
+          '    button { background: #111827; color: #cbd5e1; border: 1px solid #1f2937; padding: 7px 13px; border-radius: 8px; font-weight: 700; cursor: pointer; }',
+          '    button.active { background: #38bdf8; color: #05111d; border-color: transparent; }',
+          '    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }',
+          '    .card { background: #101829; border: 1px solid #1e293b; border-radius: 14px; padding: 16px; }',
+          '    .tag { font-size: 10px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }',
+          '    .card h3 { margin: 6px 0; font-size: 16px; }',
+          '    .card p { font-size: 12px; color: #94a3b8; }',
+          '    .cta { margin-top: 20px; display: flex; align-items: center; gap: 12px; }',
+          '    #toast { font-size: 12px; color: #4ade80; font-weight: 700; }',
+          '  </style>',
+          '</head>',
+          '<body>',
+          '  <main class="wrap">',
+          '    <span class="pill">AVAILABLE FOR 2026 PROJECTS</span>',
+          '    <h1>Designing fast, tactile web products.</h1>',
+          '    <p class="sub">Zero-bloat interactive interfaces, 3D product showcases, and local-first tools.</p>',
+          '    <div class="filters" id="filters"></div>',
+          '    <div class="grid" id="grid"></div>',
+          '    <div class="cta">',
+          '      <button id="copyBtn" class="active" type="button">Copy Contact Email</button>',
+          '      <span id="toast"></span>',
+          '    </div>',
+          '  </main>',
+          '  ' + S_OPEN,
+          '    const WORK = [',
+          '      { title: "Pulse Audio Synth", cat: "App", desc: "Web Audio modular synthesizer running at 60 FPS." },',
+          '      { title: "Alpine 3D Map", cat: "3D", desc: "Interactive topographic terrain explorer in WebGL2." },',
+          '      { title: "Local Notes Vault", cat: "App", desc: "Instant offline markdown knowledge graph." }',
+          '    ];',
+          '    const CATS = ["All", "App", "3D"];',
+          '    let active = "All";',
+          '    function draw() {',
+          '      const f = document.getElementById("filters");',
+          '      f.innerHTML = "";',
+          '      CATS.forEach(function (c) {',
+          '        const b = document.createElement("button");',
+          '        b.textContent = c;',
+          '        if (c === active) b.className = "active";',
+          '        b.onclick = function () { active = c; draw(); };',
+          '        f.appendChild(b);',
+          '      });',
+          '      const g = document.getElementById("grid");',
+          '      g.innerHTML = WORK.filter(function (w) { return active === "All" || w.cat === active; }).map(function (w) {',
+          '        return "<article class=\\"card\\"><div class=\\"tag\\">" + w.cat + "</div><h3>" + w.title + "</h3><p>" + w.desc + "</p></article>";',
+          '      }).join("");',
+          '    }',
+          '    document.getElementById("copyBtn").onclick = function () {',
+          '      document.getElementById("toast").textContent = "Copied hello@nova-studio.example!";',
+          '    };',
+          '    draw();',
+          '  ' + S_CLOSE,
+          '</body>',
+          '</html>'
+        ].join('\n');
+      }
+
+      function buildCard3dBlueprint() {
+        return [
+          '<!doctype html>',
+          '<html lang="en">',
+          '<head>',
+          '  <meta charset="utf-8" />',
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <title>Interactive 3D Holographic Card</title>',
+          '  <style>',
+          '    * { box-sizing: border-box; margin: 0; padding: 0; }',
+          '    body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #060913; color: #f8fafc; font-family: Inter, system-ui, sans-serif; perspective: 900px; }',
+          '    .card { width: 320px; height: 200px; border-radius: 20px; padding: 22px; position: relative; overflow: hidden; background: linear-gradient(135deg, #0ea5e9, #6366f1 55%, #ec4899); box-shadow: 0 24px 60px rgba(14, 165, 233, 0.35); transform-style: preserve-3d; transition: transform 0.08s ease-out; cursor: pointer; }',
+          '    .glare { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.45), transparent 60%); opacity: 0.65; }',
+          '    .chip { width: 42px; height: 30px; border-radius: 6px; background: linear-gradient(135deg, #fde047, #f59e0b); margin-bottom: 24px; }',
+          '    .num { font-family: ui-monospace, monospace; font-size: 18px; letter-spacing: 0.14em; margin-bottom: 18px; }',
+          '    .foot { display: flex; justify-content: space-between; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.9; }',
+          '    button { background: #111c33; color: #fff; border: 1px solid #334155; padding: 8px 14px; border-radius: 10px; font-weight: 700; cursor: pointer; }',
+          '  </style>',
+          '</head>',
+          '<body>',
+          '  <div class="card" id="card">',
+          '    <div class="glare" id="glare"></div>',
+          '    <div class="chip"></div>',
+          '    <div class="num">B8G0  4096  2026  9001</div>',
+          '    <div class="foot"><span>B8G Sovereign Pass</span><span>Verified</span></div>',
+          '  </div>',
+          '  <button id="themeBtn" type="button">Cycle Hologram Palette</button>',
+          '  ' + S_OPEN,
+          '    const card = document.getElementById("card");',
+          '    const glare = document.getElementById("glare");',
+          '    const themes = [',
+          '      "linear-gradient(135deg, #0ea5e9, #6366f1 55%, #ec4899)",',
+          '      "linear-gradient(135deg, #10b981, #0ea5e9 55%, #1e1b4b)",',
+          '      "linear-gradient(135deg, #f59e0b, #ef4444 55%, #7c3aed)"',
+          '    ];',
+          '    let t = 0;',
+          '    document.addEventListener("mousemove", function (e) {',
+          '      const r = card.getBoundingClientRect();',
+          '      const px = (e.clientX - r.left) / r.width;',
+          '      const py = (e.clientY - r.top) / r.height;',
+          '      const rx = (0.5 - py) * 26;',
+          '      const ry = (px - 0.5) * 26;',
+          '      card.style.transform = "rotateX(" + rx.toFixed(1) + "deg) rotateY(" + ry.toFixed(1) + "deg)";',
+          '      glare.style.background = "radial-gradient(circle at " + (px * 100).toFixed(0) + "% " + (py * 100).toFixed(0) + "%, rgba(255,255,255,0.5), transparent 58%)";',
+          '    });',
+          '    document.getElementById("themeBtn").onclick = function () {',
+          '      t = (t + 1) % themes.length;',
+          '      card.style.background = themes[t];',
+          '    };',
+          '  ' + S_CLOSE,
+          '</body>',
+          '</html>'
+        ].join('\n');
+      }
+
+      function buildBrokenBlueprint() {
+        return [
+          '<!doctype html>',
+          '<html lang="en">',
+          '<head>',
+          '  <meta charset="utf-8" />',
+          '  <title>Broken App (Auto-Repair Test)</title>',
+          '  <link rel="stylesheet" href="https://cdn.example-legacy.invalid/app.css" />',
+          '  <style>',
+          '    body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #070b14; color: #f8fafc; font-family: Inter, system-ui, sans-serif; }',
+          '    .box { background: #111827; border: 1px solid #38bdf8; border-radius: 16px; padding: 26px; text-align: center; max-width: 380px; }',
+          '    button { margin-top: 14px; background: #4ade80; color: #052e16; border: none; border-radius: 10px; padding: 10px 18px; font-weight: 800; cursor: pointer; }',
+          '  </style>',
+          '</head>',
+          '<body>',
+          '  <div class="box">',
+          '    <h1>Auto-Repaired Counter</h1>',
+          '    <p style="color:#94a3b8;margin-top:6px">Clicks: <strong id="cnt">0</strong></p>',
+          '    <button id="incBtn" type="button">Increment Counter</button>',
+          '  ' + S_OPEN,
+          '    const DEMO_KEY = "sk_live_99482716253445566778899";',
+          '    let count = 0;',
+          '    document.getElementById("incBtn").onclick = function () {',
+          '      count += 1;',
+          '      document.getElementById("cnt").textContent = String(count;',
+          '    };',
+          '  ' + S_CLOSE,
+          '</body>',
+          '</html>'
+        ].join('\n');
+      }
+
+      const BLUEPRINTS = {
+        weather: {
+          prompt: 'Build a dark-glass Weather Dashboard with city switcher, hourly forecast chart, and C/F unit toggle.',
+          code: buildWeatherBlueprint
+        },
+        portfolio: {
+          prompt: 'Build a sleek creator Portfolio Landing Page with filterable project cards and copy-email action.',
+          code: buildPortfolioBlueprint
+        },
+        card3d: {
+          prompt: 'Build an Interactive 3D Holographic Card with pointer-tracking tilt glare and palette switcher.',
+          code: buildCard3dBlueprint
+        },
+        broken: {
+          prompt: 'Test the Bounded Auto-Repair Loop on a broken app with JS syntax error, unclosed HTML tag, CDN link, and leaked API key.',
+          code: buildBrokenBlueprint
+        }
+      };
+
+      let passHistory = [];
+
+      function lineAt(text, index) {
+        let line = 1;
+        for (let i = 0; i < index && i < text.length; i += 1) {
+          if (text.charCodeAt(i) === 10) line += 1;
+        }
+        return line;
+      }
+
+      const JS_KEYWORDS = new Set([
+        'break','case','catch','class','const','continue','debugger','default','delete','do','else',
+        'export','extends','false','finally','for','function','if','import','in','instanceof','let',
+        'new','null','return','super','switch','this','throw','true','try','typeof','var','void',
+        'while','with','yield','async','await','of','static','get','set','from','as'
+      ]);
+      const BROWSER_GLOBALS = [
+        'document','window','console','Math','JSON','Array','Object','String','Number','Boolean',
+        'Date','RegExp','Promise','Map','Set','WeakMap','WeakSet','Error','TypeError','SyntaxError',
+        'ReferenceError','URL','Blob','File','FileReader','fetch','Headers','Request','Response',
+        'setTimeout','clearTimeout','setInterval','clearInterval','requestAnimationFrame',
+        'cancelAnimationFrame','performance','navigator','location','history','localStorage',
+        'sessionStorage','HTMLElement','Element','Node','Event','CustomEvent','Image','Audio',
+        'Uint8Array','Float32Array','Int32Array','ArrayBuffer','DataView','parseInt','parseFloat',
+        'isNaN','isFinite','encodeURIComponent','decodeURIComponent','atob','btoa','alert',
+        'confirm','prompt','NaN','Infinity','arguments','globalThis','self','crypto','structuredClone',
+        'Intl','Symbol','BigInt','Reflect','Proxy','AbortController','TextEncoder','TextDecoder'
+      ];
+      const BROWSER_GLOBAL_SET = new Set(BROWSER_GLOBALS);
+
+      function levenshtein(a, b) {
+        if (Math.abs(a.length - b.length) > 2) return 99;
+        const dp = [];
+        for (let i = 0; i <= a.length; i += 1) {
+          dp[i] = [i];
+        }
+        for (let j = 0; j <= b.length; j += 1) {
+          dp[0][j] = j;
+        }
+        for (let i = 1; i <= a.length; i += 1) {
+          for (let j = 1; j <= b.length; j += 1) {
+            const cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+            dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+          }
+        }
+        return dp[a.length][b.length];
+      }
+
+      function findNearestIdent(name, candidates) {
+        let best = '';
+        let bestDist = 3;
+        for (let i = 0; i < candidates.length; i += 1) {
+          const c = candidates[i];
+          const d = levenshtein(name, c);
+          if (d < bestDist) {
+            bestDist = d;
+            best = c;
+          }
+        }
+        return best;
+      }
+
+      function stripJsStringsAndComments(code) {
+        return code
+          .replace(/\/\*[\s\S]*?\*\//g, function (m) { return m.replace(/[^\n]/g, ' '); })
+          .replace(/\/\/[^\n]*/g, function (m) { return ' '.repeat(m.length); })
+          .replace(/'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"|\x60(?:\\.|[^\x60\\])*\x60/g, function (m) {
+            return m.replace(/[^\n]/g, ' ');
+          });
+      }
+
+      function collectDeclaredIdents(cleanCode) {
+        const decls = new Set();
+        let m;
+        const varRe = /\b(?:var|let|const|function|class)\s+([A-Za-z_$][A-Za-z0-9_$]*)/g;
+        while ((m = varRe.exec(cleanCode)) !== null) decls.add(m[1]);
+        const fnParamRe = /function(?:\s+[A-Za-z_$][A-Za-z0-9_$]*)?\s*\(([^)]*)\)/g;
+        while ((m = fnParamRe.exec(cleanCode)) !== null) {
+          m[1].split(',').forEach(function (p) {
+            const id = p.trim().replace(/=[\s\S]*$/, '').replace(/^\.\.\./, '').trim();
+            if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(id)) decls.add(id);
+          });
+        }
+        const arrowRe = /\(([^)]*)\)\s*=>/g;
+        while ((m = arrowRe.exec(cleanCode)) !== null) {
+          m[1].split(',').forEach(function (p) {
+            const id = p.trim().replace(/=[\s\S]*$/, '').replace(/^\.\.\./, '').trim();
+            if (/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(id)) decls.add(id);
+          });
+        }
+        const singleArrowRe = /\b([A-Za-z_$][A-Za-z0-9_$]*)\s*=>/g;
+        while ((m = singleArrowRe.exec(cleanCode)) !== null) decls.add(m[1]);
+        const catchRe = /\bcatch\s*\(\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*\)/g;
+        while ((m = catchRe.exec(cleanCode)) !== null) decls.add(m[1]);
+        return decls;
+      }
+
+      function checkUndefinedJsIdents(jsCode, baseLine) {
+        const clean = stripJsStringsAndComments(jsCode);
+        const decls = collectDeclaredIdents(clean);
+        const allCandidates = BROWSER_GLOBALS.concat(Array.from(decls));
+        const issues = [];
+        const seen = new Set();
+        const idRe = /\b([A-Za-z_$][A-Za-z0-9_$]*)\b/g;
+        let m;
+        while ((m = idRe.exec(clean)) !== null) {
+          const name = m[1];
+          const idx = m.index;
+          if (JS_KEYWORDS.has(name) || BROWSER_GLOBAL_SET.has(name) || decls.has(name)) continue;
+          // Skip property access (preceded by '.')
+          let prev = idx - 1;
+          while (prev >= 0 && /\s/.test(clean.charAt(prev))) prev -= 1;
+          if (prev >= 0 && clean.charAt(prev) === '.') continue;
+          // Skip object literal keys (followed by ':' but not '?:')
+          let next = idx + name.length;
+          while (next < clean.length && /\s/.test(clean.charAt(next))) next += 1;
+          if (next < clean.length && clean.charAt(next) === ':' && clean.charAt(prev) !== '?') continue;
+          if (seen.has(name)) continue;
+          seen.add(name);
+          const suggestion = findNearestIdent(name, allCandidates);
+          issues.push({
+            ruleId: 'B8G-JS-UNDEF-IDENT',
+            line: baseLine + lineAt(clean, idx) - 1,
+            badIdent: name,
+            suggestion: suggestion,
+            invariant: 'Undeclared JS identifier "' + name + '"' + (suggestion ? ' (did you mean "' + suggestion + '"?)' : '') + '.',
+            fix: suggestion
+              ? 'Replace misspelled identifier "' + name + '" with "' + suggestion + '".'
+              : 'Declare "' + name + '" with const/let or fix the identifier name.'
+          });
+        }
+        return issues;
+      }
+
+      function verifySource(source) {
+        const t0 = performance.now();
+        const deltas = [];
+
+        // 1. JS Syntax + Free-Identifier Scope Gate
+        SCRIPT_BLOCK_RE.lastIndex = 0;
+        let sm;
+        while ((sm = SCRIPT_BLOCK_RE.exec(source)) !== null) {
+          const jsCode = sm[1] || '';
+          const baseLine = lineAt(source, sm.index);
+          let syntaxOk = true;
+          try {
+            new Function(jsCode);
+          } catch (err) {
+            syntaxOk = false;
+            const msg = err && err.message ? String(err.message) : 'JavaScript syntax error';
+            deltas.push({
+              ruleId: 'B8G-JS-SYNTAX',
+              line: baseLine + 1,
+              invariant: 'Inline JS must parse cleanly in V8: ' + msg,
+              fix: 'Balance missing parenthesis/brace or syntax token inside script block.'
+            });
+          }
+          if (syntaxOk) {
+            const identIssues = checkUndefinedJsIdents(jsCode, baseLine);
+            for (let ii = 0; ii < identIssues.length; ii += 1) {
+              deltas.push(identIssues[ii]);
+            }
+          }
+        }
+
+        // 2. HTML Tag Balance check (non-void container tags)
+        const prose = source.replace(SCRIPT_BLOCK_RE, function (m) {
+          return m.replace(/[^\n]/g, ' ');
+        }).replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, function (m) {
+          return m.replace(/[^\n]/g, ' ');
+        });
+        const VOID_TAGS = { area: 1, base: 1, br: 1, col: 1, embed: 1, hr: 1, img: 1, input: 1, link: 1, meta: 1, param: 1, source: 1, track: 1, wbr: 1 };
+        const stack = [];
+        const tagRe = /<\/?([a-zA-Z][a-zA-Z0-9-]*)(?:\s[^>]*)?>/g;
+        let tm;
+        while ((tm = tagRe.exec(prose)) !== null) {
+          const full = tm[0];
+          const tag = tm[1].toLowerCase();
+          if (VOID_TAGS[tag] || full.endsWith('/>')) continue;
+          const ln = lineAt(prose, tm.index);
+          if (full.charAt(1) === '/') {
+            if (stack.length === 0) {
+              deltas.push({
+                ruleId: 'B8G-HTML-BALANCE',
+                line: ln,
+                invariant: 'Unexpected closing tag </' + tag + '> with no open element.',
+                fix: 'Remove stray </' + tag + '> or open matching <' + tag + '>.'
+              });
+            } else {
+              const top = stack[stack.length - 1];
+              if (top.tag === tag) {
+                stack.pop();
+              } else {
+                const matchIdx = stack.map(function (s) { return s.tag; }).lastIndexOf(tag);
+                if (matchIdx >= 0) {
+                  for (let k = stack.length - 1; k > matchIdx; k -= 1) {
+                    const unclosed = stack.pop();
+                    deltas.push({
+                      ruleId: 'B8G-HTML-BALANCE',
+                      line: unclosed.line,
+                      invariant: 'Unclosed <' + unclosed.tag + '> before </' + tag + '>.',
+                      fix: 'Insert missing </' + unclosed.tag + '> before </' + tag + '>.'
+                    });
+                  }
+                  stack.pop();
+                } else {
+                  deltas.push({
+                    ruleId: 'B8G-HTML-BALANCE',
+                    line: ln,
+                    invariant: 'Mismatched closing tag </' + tag + '> (expected </' + top.tag + '>).',
+                    fix: 'Replace </' + tag + '> with </' + top.tag + '>.'
+                  });
+                }
+              }
+            }
+          } else {
+            stack.push({ tag: tag, line: ln });
+          }
+        }
+        while (stack.length > 0) {
+          const rem = stack.pop();
+          deltas.push({
+            ruleId: 'B8G-HTML-BALANCE',
+            line: rem.line,
+            invariant: 'Unclosed <' + rem.tag + '> reached end of document.',
+            fix: 'Close <' + rem.tag + '> with </' + rem.tag + '>.'
+          });
+        }
+
+        // 3. Offline Self-Containment / Link Closure check
+        const linkRe = /\b(?:href|src)\s*=\s*"([^"]+)"/gi;
+        let lm;
+        while ((lm = linkRe.exec(prose)) !== null) {
+          const url = lm[1];
+          if (/^https?:\/\/(?:cdn\.|unpkg\.com|cdn\.jsdelivr\.net|cdnjs\.)/i.test(url) || /\.invalid\b/i.test(url)) {
+            deltas.push({
+              ruleId: 'B8G-LINK-CLOSURE',
+              line: lineAt(prose, lm.index),
+              invariant: 'External CDN or unreachable asset breaks offline closure: ' + url,
+              fix: 'Remove external CDN link and inline styles/scripts for 100% offline execution.'
+            });
+          }
+        }
+
+        // 4. Secret-Leak Scan
+        const secretRe = /\b(sk_live_[A-Za-z0-9]{10,}|ghp_[A-Za-z0-9]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z\-_]{20,})\b/g;
+        let secM;
+        while ((secM = secretRe.exec(source)) !== null) {
+          deltas.push({
+            ruleId: 'B8G-SECRET-LEAK',
+            line: lineAt(source, secM.index),
+            invariant: 'Hardcoded credential detected in client source (' + secM[1].slice(0, 10) + '...).',
+            fix: 'Replace hardcoded secret with safe runtime placeholder "LOCAL_ENV_ONLY".'
+          });
+        }
+
+        // 5. Cross-Layer DOM Symbol Closure (R_CSS <= M_DOM and R_JS_DOM <= M_DOM)
+        const domClasses = new Set();
+        const domIds = new Set();
+        const clsAttrRe = /\bclass\s*=\s*["']([^"']+)["']/gi;
+        let cm;
+        while ((cm = clsAttrRe.exec(prose)) !== null) {
+          cm[1].split(/\s+/).forEach(function (c) { if (c) domClasses.add(c); });
+        }
+        const idAttrRe = /\bid\s*=\s*["']([^"']+)["']/gi;
+        let im;
+        while ((im = idAttrRe.exec(prose)) !== null) {
+          if (im[1]) domIds.add(im[1]);
+        }
+        // Also harvest dynamically created classes/ids inside inline script blocks
+        SCRIPT_BLOCK_RE.lastIndex = 0;
+        let jsDomM;
+        while ((jsDomM = SCRIPT_BLOCK_RE.exec(source)) !== null) {
+          const jcode = jsDomM[1] || '';
+          let dm;
+          const dynClsRe = /(?:classList\.(?:add|toggle|replace)\s*\(\s*["']([A-Za-z0-9_-]+)["']|className\s*=\s*["']([^"']+)["']|class=["']([^"']+)["'])/g;
+          while ((dm = dynClsRe.exec(jcode)) !== null) {
+            const raw = dm[1] || dm[2] || dm[3] || '';
+            raw.split(/\s+/).forEach(function (c) {
+              if (c && /^[A-Za-z_-][A-Za-z0-9_-]*$/.test(c)) domClasses.add(c);
+            });
+          }
+          const dynIdRe = /\bid=["']([A-Za-z0-9_-]+)["']/g;
+          while ((dm = dynIdRe.exec(jcode)) !== null) {
+            if (dm[1]) domIds.add(dm[1]);
+          }
+        }
+        const classListArr = Array.from(domClasses);
+        const idListArr = Array.from(domIds);
+
+        // 5a. CSS Selector Closure (B8G-CSS-DEAD-SELECTOR)
+        const styleRe = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
+        let stm;
+        while ((stm = styleRe.exec(source)) !== null) {
+          const cssRaw = stm[1] || '';
+          const cssBaseLine = lineAt(source, stm.index);
+          const cssNoComments = cssRaw.replace(/\/\*[\s\S]*?\*\//g, function (m) {
+            return m.replace(/[^\n]/g, ' ');
+          });
+          // Mask out declaration bodies { ... } while keeping newlines so only selectors remain
+          let depth = 0;
+          let selOnly = '';
+          for (let ci = 0; ci < cssNoComments.length; ci += 1) {
+            const ch = cssNoComments.charAt(ci);
+            if (ch === '{') {
+              depth += 1;
+              selOnly += ' ';
+            } else if (ch === '}') {
+              depth = Math.max(0, depth - 1);
+              selOnly += ' ';
+            } else if (depth === 0 || ch === '\n') {
+              selOnly += ch;
+            } else {
+              selOnly += ' ';
+            }
+          }
+          // Strip @-rules headers (e.g. @media (...), @keyframes name)
+          selOnly = selOnly.replace(/@[a-zA-Z-]+[^{;\n]*/g, function (m) { return ' '.repeat(m.length); });
+          const seenDeadSel = new Set();
+          const cssClassRe = /\.([A-Za-z_-][A-Za-z0-9_-]*)/g;
+          let csm;
+          while ((csm = cssClassRe.exec(selOnly)) !== null) {
+            const cls = csm[1];
+            if (domClasses.has(cls) || seenDeadSel.has('.' + cls)) continue;
+            seenDeadSel.add('.' + cls);
+            const sug = findNearestIdent(cls, classListArr);
+            deltas.push({
+              ruleId: 'B8G-CSS-DEAD-SELECTOR',
+              line: cssBaseLine + lineAt(selOnly, csm.index) - 1,
+              badSelector: '.' + cls,
+              suggestedSelector: sug ? ('.' + sug) : '',
+              invariant: 'CSS class selector ".' + cls + '" matches no HTML/JS element (R_CSS ⊄ M_DOM)' + (sug ? ' (did you mean ".' + sug + '"?)' : '') + '.',
+              fix: sug
+                ? 'Replace dead CSS selector ".' + cls + '" with ".' + sug + '".'
+                : 'Add class="' + cls + '" to an HTML element or remove the unused CSS rule.'
+            });
+          }
+          const cssIdRe = /#([A-Za-z_-][A-Za-z0-9_-]*)/g;
+          let ism;
+          while ((ism = cssIdRe.exec(selOnly)) !== null) {
+            const idn = ism[1];
+            if (domIds.has(idn) || seenDeadSel.has('#' + idn)) continue;
+            seenDeadSel.add('#' + idn);
+            const sug = findNearestIdent(idn, idListArr);
+            deltas.push({
+              ruleId: 'B8G-CSS-DEAD-SELECTOR',
+              line: cssBaseLine + lineAt(selOnly, ism.index) - 1,
+              badSelector: '#' + idn,
+              suggestedSelector: sug ? ('#' + sug) : '',
+              invariant: 'CSS id selector "#' + idn + '" matches no HTML/JS element (R_CSS ⊄ M_DOM)' + (sug ? ' (did you mean "#' + sug + '"?)' : '') + '.',
+              fix: sug
+                ? 'Replace dead CSS selector "#' + idn + '" with "#' + sug + '".'
+                : 'Add id="' + idn + '" to an HTML element or remove the unused CSS rule.'
+            });
+          }
+        }
+
+        // 5b. JS DOM Query Closure (B8G-JS-DEAD-DOM-REF)
+        SCRIPT_BLOCK_RE.lastIndex = 0;
+        let qsm;
+        while ((qsm = SCRIPT_BLOCK_RE.exec(source)) !== null) {
+          const jcode = qsm[1] || '';
+          const jBase = lineAt(source, qsm.index);
+          const byIdRe = /\bgetElementById\s*\(\s*["']([A-Za-z0-9_-]+)["']\s*\)/g;
+          let bm;
+          while ((bm = byIdRe.exec(jcode)) !== null) {
+            const targetId = bm[1];
+            if (domIds.has(targetId)) continue;
+            const sug = findNearestIdent(targetId, idListArr);
+            deltas.push({
+              ruleId: 'B8G-JS-DEAD-DOM-REF',
+              line: jBase + lineAt(jcode, bm.index) - 1,
+              badDomRef: targetId,
+              suggestedDomRef: sug,
+              invariant: 'JS getElementById("' + targetId + '") references missing HTML id (R_JS ⊄ M_DOM)' + (sug ? ' (did you mean "' + sug + '"?)' : '') + '.',
+              fix: sug
+                ? 'Replace missing id "' + targetId + '" with "' + sug + '".'
+                : 'Add id="' + targetId + '" to your HTML.'
+            });
+          }
+          const qsRe = /\bquerySelector(?:All)?\s*\(\s*["']([.#])([A-Za-z_-][A-Za-z0-9_-]*)["']\s*\)/g;
+          let qm;
+          while ((qm = qsRe.exec(jcode)) !== null) {
+            const sigil = qm[1];
+            const sym = qm[2];
+            const okSet = sigil === '#' ? domIds : domClasses;
+            if (okSet.has(sym)) continue;
+            const sug = findNearestIdent(sym, sigil === '#' ? idListArr : classListArr);
+            deltas.push({
+              ruleId: 'B8G-JS-DEAD-DOM-REF',
+              line: jBase + lineAt(jcode, qm.index) - 1,
+              badDomRef: sigil + sym,
+              suggestedDomRef: sug ? (sigil + sug) : '',
+              invariant: 'JS querySelector("' + sigil + sym + '") matches no HTML element (R_JS ⊄ M_DOM)' + (sug ? ' (did you mean "' + sigil + sug + '"?)' : '') + '.',
+              fix: sug
+                ? 'Replace selector "' + sigil + sym + '" with "' + sigil + sug + '".'
+                : 'Ensure "' + sigil + sym + '" exists in HTML.'
+            });
+          }
+        }
+
+        const elapsedMs = Math.max(0.2, performance.now() - t0);
+        return { deltas: deltas, elapsedMs: elapsedMs };
+      }
+
+      function autoRepairSource(source) {
+        let fixed = source;
+        const actions = [];
+
+        // Repair 1: Strip external CDN / invalid stylesheet links
+        const beforeCdn = fixed;
+        fixed = fixed.replace(/^[ \t]*<link\b[^>]*href="(?:https?:\/\/(?:cdn\.|unpkg\.com|cdn\.jsdelivr\.net|cdnjs\.)[^"]*|[^"]*\.invalid[^"]*)"[^>]*>\r?\n?/gim, '');
+        if (fixed !== beforeCdn) actions.push('Removed external CDN link for offline closure');
+
+        // Repair 2: Redact hardcoded secrets
+        const beforeSec = fixed;
+        fixed = fixed.replace(/\b(?:sk_live_[A-Za-z0-9]{10,}|ghp_[A-Za-z0-9]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z\-_]{20,})\b/g, 'LOCAL_ENV_ONLY');
+        if (fixed !== beforeSec) actions.push('Redacted leaked secret token -> LOCAL_ENV_ONLY');
+
+        // Repair 3: Fix common JS syntax errors inside inline script blocks
+        fixed = fixed.replace(SCRIPT_BLOCK_RE, function (full, jsCode) {
+          let code = jsCode;
+          try {
+            new Function(code);
+            return full;
+          } catch (_err) {
+            // Fix missing ')' before ';' (e.g. String(count;)
+            const patched = code.replace(/(\([^(;\n]+);/g, function (m, inner) {
+              const opens = (inner.match(/\(/g) || []).length;
+              const closes = (inner.match(/\)/g) || []).length;
+              if (opens > closes) {
+                return inner + ')'.repeat(opens - closes) + ';';
+              }
+              return m;
+            });
+            code = patched;
+            try {
+              new Function(code);
+              actions.push('Balanced missing JS parenthesis in inline script');
+            } catch (_err2) {
+              // Balance trailing curly braces if needed
+              const ob = (code.match(/\{/g) || []).length;
+              const cb = (code.match(/\}/g) || []).length;
+              if (ob > cb) {
+                code = code + '\n' + '}'.repeat(ob - cb) + '\n';
+                actions.push('Closed unbalanced JS block brace');
+              }
+            }
+            return S_OPEN + code + S_CLOSE;
+          }
+        });
+
+        // Repair 4: Fix misspelled JS identifiers (e.g. docment -> document) when suggestion exists
+        const identCheck = verifySource(fixed);
+        const identFixes = identCheck.deltas.filter(function (d) {
+          return d.ruleId === 'B8G-JS-UNDEF-IDENT' && d.badIdent && d.suggestion;
+        });
+        if (identFixes.length > 0) {
+          fixed = fixed.replace(SCRIPT_BLOCK_RE, function (full, jsCode) {
+            let code = jsCode;
+            for (let fi = 0; fi < identFixes.length; fi += 1) {
+              const bad = identFixes[fi].badIdent;
+              const sug = identFixes[fi].suggestion;
+              const re = new RegExp('\\b' + bad + '\\b', 'g');
+              const nextCode = code.replace(re, sug);
+              if (nextCode !== code) {
+                code = nextCode;
+                actions.push('Repaired misspelled JS identifier "' + bad + '" -> "' + sug + '"');
+              }
+            }
+            return S_OPEN + code + S_CLOSE;
+          });
+        }
+
+        // Repair 5: Fix dead CSS selectors & dead JS DOM refs when Levenshtein match exists
+        const domCheck = verifySource(fixed);
+        const cssFixes = domCheck.deltas.filter(function (d) {
+          return d.ruleId === 'B8G-CSS-DEAD-SELECTOR' && d.badSelector && d.suggestedSelector;
+        });
+        if (cssFixes.length > 0) {
+          fixed = fixed.replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gi, function (full, cssCode) {
+            let nextCss = cssCode;
+            for (let ci = 0; ci < cssFixes.length; ci += 1) {
+              const bad = cssFixes[ci].badSelector;
+              const sug = cssFixes[ci].suggestedSelector;
+              const esc = bad.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&');
+              const re = new RegExp(esc + '(?![A-Za-z0-9_-])', 'g');
+              const updated = nextCss.replace(re, sug);
+              if (updated !== nextCss) {
+                nextCss = updated;
+                actions.push('Repaired dead CSS selector "' + bad + '" -> "' + sug + '"');
+              }
+            }
+            return full.replace(cssCode, nextCss);
+          });
+        }
+        const domRefFixes = domCheck.deltas.filter(function (d) {
+          return d.ruleId === 'B8G-JS-DEAD-DOM-REF' && d.badDomRef && d.suggestedDomRef;
+        });
+        if (domRefFixes.length > 0) {
+          fixed = fixed.replace(SCRIPT_BLOCK_RE, function (full, jsCode) {
+            let nextJs = jsCode;
+            for (let di = 0; di < domRefFixes.length; di += 1) {
+              const bad = domRefFixes[di].badDomRef;
+              const sug = domRefFixes[di].suggestedDomRef;
+              const esc = bad.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&');
+              const re = new RegExp('(["\'])' + esc + '\\1', 'g');
+              const updated = nextJs.replace(re, '$1' + sug + '$1');
+              if (updated !== nextJs) {
+                nextJs = updated;
+                actions.push('Repaired dead JS DOM ref "' + bad + '" -> "' + sug + '"');
+              }
+            }
+            return S_OPEN + nextJs + S_CLOSE;
+          });
+        }
+
+        // Repair 6: Close unclosed HTML container tags before script or </body>
+        const check = verifySource(fixed);
+        const unclosedTags = check.deltas.filter(function (d) {
+          return d.ruleId === 'B8G-HTML-BALANCE' && d.invariant.indexOf('Unclosed <') === 0;
+        });
+        if (unclosedTags.length > 0) {
+          for (let i = 0; i < unclosedTags.length; i += 1) {
+            const m = /Unclosed <([a-zA-Z0-9-]+)>/.exec(unclosedTags[i].invariant);
+            if (!m) continue;
+            const tag = m[1];
+            const closeTag = '</' + tag + '>';
+            const scriptIdx = fixed.indexOf(S_OPEN);
+            const bodyIdx = fixed.toLowerCase().lastIndexOf('</body>');
+            const insertAt = scriptIdx >= 0 ? scriptIdx : (bodyIdx >= 0 ? bodyIdx : fixed.length);
+            fixed = fixed.slice(0, insertAt) + '  ' + closeTag + '\n  ' + fixed.slice(insertAt);
+            actions.push('Inserted missing ' + closeTag);
+          }
+        }
+
+        return { fixed: fixed, actions: actions };
+      }
+
+      function renderTelemetry(result) {
+        const count = result.deltas.length;
+        latencyBadge.textContent = result.elapsedMs.toFixed(1) + ' ms';
+        latencyBadge.style.color = count === 0 ? 'var(--emerald)' : 'var(--rose)';
+
+        const lines = editor.value.split('\n').length;
+        const kb = (editor.value.length / 1024).toFixed(1);
+        editorMeta.textContent = lines + ' lines · ' + kb + ' KB';
+
+        if (count === 0) {
+          verifyStatus.textContent = 'VERIFIED · 0 ERRORS';
+          verifyStatus.className = 'status-pill status-ok';
+          const runtimeHook =
+            S_OPEN +
+            'window.addEventListener("error",function(e){parent.postMessage({type:"b8g-runtime-error",message:e.message||"Runtime error",line:e.lineno||1},"*");});' +
+            'window.addEventListener("unhandledrejection",function(e){parent.postMessage({type:"b8g-runtime-error",message:String(e.reason||"Unhandled rejection"),line:1},"*");});' +
+            S_CLOSE;
+          const htmlWithHook = editor.value.indexOf('<head>') >= 0
+            ? editor.value.replace('<head>', '<head>' + runtimeHook)
+            : runtimeHook + editor.value;
+          previewFrame.srcdoc = htmlWithHook;
+          previewBanner.textContent = 'PASS · Live Sandbox Rendered (' + result.elapsedMs.toFixed(1) + ' ms)';
+          previewBanner.className = 'preview-banner';
+        } else {
+          verifyStatus.textContent = count + (count === 1 ? ' ERROR' : ' ERRORS') + ' · REPAIR NEEDED';
+          verifyStatus.className = 'status-pill status-err';
+          previewBanner.textContent = 'HOLD · ' + count + ' Boundary Violation(s) — Click 1-Click Auto-Fix';
+          previewBanner.className = 'preview-banner blocked';
+        }
+
+        // Token savings meter
+        const compressedTok = count === 0 ? 18 : count * 22;
+        const savedRatio = ((1 - compressedTok / 4200) * 100).toFixed(1);
+        deltaTokens.textContent = compressedTok + ' tok (' + result.elapsedMs.toFixed(1) + ' ms)';
+        savingsPct.textContent = savedRatio + '% saved';
+        savingsBar.style.width = savedRatio + '%';
+
+        // Pass timeline
+        passStrip.innerHTML = passHistory.slice(-4).map(function (p) {
+          const cls = p.kind === 'ok' ? 'pass-ok' : (p.kind === 'fix' ? 'pass-fix' : 'pass-err');
+          return '<div class="pass-item ' + cls + '"><span>' + p.label + '</span><span>' + p.detail + '</span></div>';
+        }).join('');
+
+        // ErrorDelta cards
+        if (count === 0) {
+          deltaList.innerHTML =
+            '<div class="delta-card ok">' +
+              '<div class="delta-top"><strong>0 BOUNDARY VIOLATIONS</strong><span>GREEN</span></div>' +
+              '<div class="delta-inv">JS AST, HTML tag balance, offline link closure, and secret-leak checks all passed.</div>' +
+            '</div>';
+        } else {
+          deltaList.innerHTML = result.deltas.map(function (d) {
+            return (
+              '<div class="delta-card">' +
+                '<div class="delta-top">' +
+                  '<span class="delta-rule">' + d.ruleId + '</span>' +
+                  '<span class="delta-line">Line ' + d.line + '</span>' +
+                '</div>' +
+                '<div class="delta-inv">' + escapeHtml(d.invariant) + '</div>' +
+                '<div class="delta-fix">Fix: ' + escapeHtml(d.fix) + '</div>' +
+              '</div>'
+            );
+          }).join('');
+        }
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      function runVerifyPass(labelPrefix) {
+        const res = verifySource(editor.value);
+        const passNum = passHistory.filter(function (p) { return p.kind !== 'fix'; }).length + 1;
+        passHistory.push({
+          kind: res.deltas.length === 0 ? 'ok' : 'err',
+          label: (labelPrefix || ('Pass ' + passNum)),
+          detail: res.deltas.length === 0
+            ? '0 Errors GREEN (' + res.elapsedMs.toFixed(1) + ' ms)'
+            : res.deltas.length + ' Error(s) RED (' + res.elapsedMs.toFixed(1) + ' ms)'
+        });
+        renderTelemetry(res);
+        return res;
+      }
+
+      function loadBlueprint(key) {
+        const bp = BLUEPRINTS[key] || BLUEPRINTS.weather;
+        intentInput.value = bp.prompt;
+        editor.value = bp.code();
+        passHistory = [];
+        document.querySelectorAll('.bp-btn').forEach(function (b) {
+          b.classList.toggle('active', b.getAttribute('data-bp') === key);
+        });
+        runVerifyPass('Pass 1');
+      }
+
+      function synthesizeFromIntent() {
+        const text = (intentInput.value || '').toLowerCase();
+        if (text.indexOf('broken') >= 0 || text.indexOf('repair') >= 0 || text.indexOf('bug') >= 0) {
+          loadBlueprint('broken');
+          return;
+        }
+        if (text.indexOf('portfolio') >= 0 || text.indexOf('landing') >= 0 || text.indexOf('creator') >= 0) {
+          loadBlueprint('portfolio');
+          return;
+        }
+        if (text.indexOf('3d') >= 0 || text.indexOf('card') >= 0 || text.indexOf('holo') >= 0) {
+          loadBlueprint('card3d');
+          return;
+        }
+        if (text.indexOf('weather') >= 0 || text.indexOf('forecast') >= 0) {
+          loadBlueprint('weather');
+          return;
+        }
+        // Generate a custom verified micro-app for any arbitrary consumer prompt
+        const safeTitle = escapeHtml((intentInput.value || 'My Verified App').slice(0, 64));
+        const stackInfo = STACK_META[stackSelect.value] || STACK_META.vanilla;
+        editor.value = [
+          '<!doctype html>',
+          '<html lang="en">',
+          '<head>',
+          '  <meta charset="utf-8" />',
+          '  <meta name="viewport" content="width=device-width, initial-scale=1" />',
+          '  <title>' + safeTitle + '</title>',
+          '  <style>',
+          '    * { box-sizing: border-box; margin: 0; padding: 0; }',
+          '    body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: radial-gradient(circle at 20% 10%, #38bdf826, transparent 45%), #070b14; color: #f8fafc; font-family: Inter, system-ui, sans-serif; }',
+          '    .card { max-width: 520px; width: 100%; background: #101829; border: 1px solid #1e293b; border-radius: 18px; padding: 26px; display: flex; flex-direction: column; gap: 14px; }',
+          '    .tag { font-family: ui-monospace, monospace; font-size: 11px; color: #4ade80; }',
+          '    h1 { font-size: 24px; letter-spacing: -0.02em; }',
+          '    p { color: #94a3b8; font-size: 14px; }',
+          '    button { align-self: flex-start; background: linear-gradient(135deg, #0ea5e9, #10b981); color: #041019; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 800; cursor: pointer; }',
+          '  </style>',
+          '</head>',
+          '<body>',
+          '  <main class="card">',
+          '    <div class="tag">B8G VERIFIED · ' + stackInfo.label + '</div>',
+          '    <h1>' + safeTitle + '</h1>',
+          '    <p>Synthesized offline by B8G Vibe-to-Verified Studio (' + stackInfo.note + ').</p>',
+          '    <button id="actionBtn" type="button">Run Interactive Check (0)</button>',
+          '  </main>',
+          '  ' + S_OPEN,
+          '    let n = 0;',
+          '    document.getElementById("actionBtn").onclick = function () {',
+          '      n += 1;',
+          '      this.textContent = "Run Interactive Check (" + n + ")";',
+          '    };',
+          '  ' + S_CLOSE,
+          '</body>',
+          '</html>'
+        ].join('\n');
+        passHistory = [];
+        runVerifyPass('Pass 1');
+      }
+
+      // Wire controls
+      document.querySelectorAll('.bp-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          loadBlueprint(btn.getAttribute('data-bp'));
+        });
+      });
+
+      document.getElementById('synthBtn').addEventListener('click', synthesizeFromIntent);
+
+      document.getElementById('runLoopBtn').addEventListener('click', function () {
+        const res = runVerifyPass();
+        if (res.deltas.length > 0) {
+          const repaired = autoRepairSource(editor.value);
+          if (repaired.fixed !== editor.value) {
+            passHistory.push({
+              kind: 'fix',
+              label: 'Auto-Fix / Model Repair',
+              detail: repaired.actions.length + ' delta patch(es) applied'
+            });
+            editor.value = repaired.fixed;
+            runVerifyPass();
+          }
+        }
+      });
+
+      document.getElementById('autoFixBtn').addEventListener('click', function () {
+        const before = verifySource(editor.value);
+        if (before.deltas.length === 0) {
+          runVerifyPass();
+          return;
+        }
+        const repaired = autoRepairSource(editor.value);
+        passHistory.push({
+          kind: 'fix',
+          label: '1-Click Auto-Fix',
+          detail: repaired.actions.length > 0 ? repaired.actions[0] : 'Boundary repair applied'
+        });
+        editor.value = repaired.fixed;
+        runVerifyPass();
+      });
+
+      document.getElementById('downloadBtn').addEventListener('click', function () {
+        const blob = new Blob([editor.value], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'b8g-verified-app.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      });
+
+      stackSelect.addEventListener('change', function () {
+        const meta = STACK_META[stackSelect.value] || STACK_META.vanilla;
+        stackBadge.textContent = meta.label;
+      });
+
+      modelSelect.addEventListener('change', function () {
+        modelHint.textContent = MODEL_META[modelSelect.value] || MODEL_META.inkling2;
+      });
+
+      let debounceId = 0;
+      editor.addEventListener('input', function () {
+        clearTimeout(debounceId);
+        debounceId = setTimeout(function () {
+          const res = verifySource(editor.value);
+          renderTelemetry(res);
+        }, 120);
+      });
+
+      const vpDesktop = document.getElementById('vpDesktop');
+      const vpMobile = document.getElementById('vpMobile');
+      vpDesktop.addEventListener('click', function () {
+        previewFrame.classList.remove('mobile');
+        vpDesktop.classList.add('active');
+        vpMobile.classList.remove('active');
+      });
+      vpMobile.addEventListener('click', function () {
+        previewFrame.classList.add('mobile');
+        vpMobile.classList.add('active');
+        vpDesktop.classList.remove('active');
+      });
+
+      window.addEventListener('message', function (ev) {
+        if (!ev.data || ev.data.type !== 'b8g-runtime-error') return;
+        const msg = String(ev.data.message || 'Runtime exception');
+        const ln = Number(ev.data.line || 1);
+        verifyStatus.textContent = '1 RUNTIME ERROR · REPAIR NEEDED';
+        verifyStatus.className = 'status-pill status-err';
+        previewBanner.textContent = 'RUNTIME ERROR · ' + msg;
+        previewBanner.className = 'preview-banner blocked';
+        deltaList.innerHTML =
+          '<div class="delta-card">' +
+            '<div class="delta-top">' +
+              '<span class="delta-rule">B8G-JS-RUNTIME</span>' +
+              '<span class="delta-line">Line ' + ln + '</span>' +
+            '</div>' +
+            '<div class="delta-inv">Live sandbox threw: ' + escapeHtml(msg) + '</div>' +
+            '<div class="delta-fix">Fix: Inspect the referenced symbol or click 1-Click Auto-Fix.</div>' +
+          '</div>';
+      });
+
+      // Initial boot with Weather Dashboard
+      loadBlueprint('weather');
+    })();
+  </script>
+</body>
+</html>
