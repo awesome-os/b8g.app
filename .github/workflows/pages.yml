@@ -27,7 +27,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p releases
-          gh release download --repo awesome-os/b8g-production-rack --dir releases --clobber
+          gh release download --repo awesome-os/b8g-production-rack --pattern "*" --dir releases --clobber
           node -e "
             const fs = require('fs');
             const crypto = require('crypto');
