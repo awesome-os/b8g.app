@@ -1,206 +1,210 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>b8g.app — Instant Games, Worlds &amp; Apps. Zero Install.</title>
-  <style>
-    :root {
-      --bg: #070b14;
-      --card: #111827;
-      --border: #1f2937;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --gold: #facc15;
-      --green: #4ade80;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: radial-gradient(circle at 20% 0%, rgba(56,189,248,0.16), transparent 45%), var(--bg);
-      color: var(--text);
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      line-height: 1.6;
-    }
-    header {
-      max-width: 1120px; margin: 0 auto; padding: 22px 24px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .logo { font-weight: 900; font-size: 1.3rem; letter-spacing: -0.03em; color: #fff; text-decoration: none; }
-    .logo span { color: var(--accent); }
-    .nav { display: flex; gap: 18px; font-size: 0.9rem; }
-    .nav a { color: var(--muted); text-decoration: none; }
-    .nav a:hover { color: #fff; }
-    main { max-width: 1120px; margin: 0 auto; padding: 24px 24px 72px; }
-    .hero { text-align: center; padding: 36px 0 44px; }
-    .hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 900; letter-spacing: -0.03em; line-height: 1.08; margin-bottom: 14px; }
-    .hero p { color: var(--muted); font-size: 1.12rem; max-width: 56ch; margin: 0 auto; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 22px; }
-    .card {
-      background: var(--card); border: 1px solid var(--border); border-radius: 18px; overflow: hidden;
-      display: flex; flex-direction: column; transition: transform 0.18s ease, border-color 0.18s ease;
-      text-decoration: none; color: inherit;
-    }
-    .card:hover { transform: translateY(-4px); border-color: var(--accent); }
-    .thumb {
-      height: 185px; display: flex; align-items: center; justify-content: center;
-      font-size: 3.4rem; position: relative;
-    }
-    .thumb.sky { background: linear-gradient(135deg, #0284c7, #38bdf8 55%, #fde68a); }
-    .thumb.village { background: linear-gradient(135deg, #1e1b4b, #c2410c 60%, #fde047); }
-    .thumb.spatial { background: linear-gradient(135deg, #064e3b, #0284c7 55%, #7e22ce); }
-    .badge {
-      position: absolute; top: 12px; left: 12px;
-      background: rgba(7,11,20,0.75); color: #fff; font-size: 11px; font-weight: 700;
-      padding: 4px 10px; border-radius: 999px; letter-spacing: 0.05em;
-    }
-    .body { padding: 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-    .body h2 { font-size: 1.25rem; font-weight: 800; }
-    .body p { color: var(--muted); font-size: 0.94rem; flex: 1; }
-    .play {
-      margin-top: 10px; display: inline-flex; align-items: center; justify-content: center;
-      background: #fff; color: #070b14; font-weight: 800; font-size: 0.9rem;
-      padding: 10px 16px; border-radius: 10px;
-    }
-    footer {
-      max-width: 1120px; margin: 0 auto; padding: 24px; border-top: 1px solid var(--border);
-      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
-      color: var(--muted); font-size: 0.85rem;
-    }
-    footer a { color: var(--accent); text-decoration: none; }
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>b8g.app — Sovereign High-Performance Compute (b8g-production-rack)</title>
+  <meta name="description" content="Cut your server bill by 70%. Drop the self-contained b8g-production-rack onto your own Linux servers or rented bare metal. Pay $0 if we don't prove it.">
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./viewer.js"></script>
 </head>
 <body>
-  <header>
-    <a class="logo" href="index.html">b8g<span>.app</span></a>
-    <nav class="nav">
-      <a href="./builder.html">Vibe-to-Verified Studio</a>
-      <a href="/">Awesome-OS (Tech)</a>
-      <a href="/kids/index.html">Kids Book</a>
-      <a href="/demos/os-desktop.html">OS Desktop</a>
-    </nav>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#top" aria-label="b8g.app home">
+        <span class="brand-mark" aria-hidden="true">B8G</span>
+        <span class="brand-name">b8g<span class="accent-cyan">.app</span></span>
+      </a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="#proof">Proof</a>
+        <a href="#calculator">70/30 Calculator</a>
+        <a href="#telemetry">Pull-on-View</a>
+        <a href="#pricing">Pricing</a>
+      </nav>
+      <a class="btn btn-sm btn-primary" href="#install">Install Rack</a>
+    </div>
   </header>
 
-  <main>
-    <div class="hero">
-      <h1>Instant Games &amp; Worlds.<br />Zero Install.</h1>
-      <p>Click and play immediately in 60 FPS on any desktop, phone, or Smart TV — no app store, no 4 GB download, no login wall.</p>
-    </div>
+  <main id="top">
+    <!-- Hero -->
+    <section class="hero" id="install">
+      <div class="container">
+        <div class="eyebrow-pill">
+          <span class="pulse-dot" aria-hidden="true"></span>
+          SOVEREIGN HIGH-PERFORMANCE COMPUTE &bull; LINUX x86_64 &amp; ARM64
+        </div>
 
-    <div class="grid">
-      <a class="card" href="./builder.html">
-        <div class="thumb" style="background:linear-gradient(135deg,#050811,#0ea5e9 45%,#10b981 95%)">
-          <span class="badge">NEW · CONSUMER APP BUILDER · &lt; 10 MS LOOP</span>
-          🛠️
-        </div>
-        <div class="body">
-          <h2>B8G Vibe-to-Verified Studio</h2>
-          <p>Turn plain-English ideas into verified, ready-to-deploy web apps offline — with instant JS/HTML/link/secret checks, 1-click Auto-Fix repair loops, and live sandbox preview.</p>
-          <span class="play">Open Vibe-to-Verified Studio →</span>
-        </div>
-      </a>
+        <h1 class="hero-title">
+          Cut Your Server Bill by <span class="gradient-text">70%</span>.<br>
+          Pay <span class="accent-emerald">$0</span> If We Don&rsquo;t Prove It.
+        </h1>
 
-      <a class="card" href="games/reality-sandbox.html">
-        <div class="thumb" style="background:linear-gradient(135deg,#070b14,#0284c7 45%,#f59e0b 90%)">
-          <span class="badge">FLAGSHIP · PBR + SHADOWS + PHYSICS + SCRIPTING</span>
-          ⚡
-        </div>
-        <div class="body">
-          <h2>3D Reality Sandbox (Live Scriptable)</h2>
-          <p>Real GPU WebGL2 Cook-Torrance PBR, 1024×1024 PCF soft shadows, rigged .glb models, live 3D collision physics, spatial Web Audio, and an in-browser live script editor!</p>
-          <span class="play">Launch Reality Sandbox →</span>
-        </div>
-      </a>
+        <p class="hero-subtitle">
+          Drop the self-contained <code>b8g-production-rack</code> onto your own Linux servers or rented bare metal.
+          Local telemetry, Pull-on-View cloud dashboard, zero Docker, zero vendor lock-in.
+        </p>
 
-      <a class="card" href="games/b8g-notebook.html">
-        <div class="thumb" style="background:linear-gradient(135deg,#0b1120,#312e81 50%,#10b981 95%)">
-          <span class="badge">LIVE NOTEBOOK STUDIO · ZERO-SERIALIZATION</span>
-          📓
+        <div class="install-card">
+          <div class="install-bar">
+            <span class="install-prompt" aria-hidden="true">$</span>
+            <code class="install-cmd" id="install-cmd">curl -fsSL https://b8g.app/install.sh | sh</code>
+            <button
+              type="button"
+              class="btn btn-copy"
+              data-copy="curl -fsSL https://b8g.app/install.sh | sh"
+              aria-label="Copy Linux install command"
+            >
+              Copy
+            </button>
+          </div>
+          <div class="download-row">
+            <a class="btn btn-outline" href="/releases/b8g-production-rack-linux-x64.tar.gz" download>
+              Linux x86_64 (.tar.gz)
+            </a>
+            <a class="btn btn-outline" href="/releases/b8g-production-rack-linux-arm64.tar.gz" download>
+              Linux ARM64 (.tar.gz)
+            </a>
+            <a class="btn btn-ghost" href="/releases/manifest.json">
+              SHA-256 manifest.json
+            </a>
+          </div>
         </div>
-        <div class="body">
-          <h2>B8G Live Notebook Studio</h2>
-          <p>Run real binary telemetry rings (50k pushes in ~2 ms), S³ quaternion gravity sims, and O(Δ) multiplayer proofs right in your browser — and export clean HTML reports.</p>
-          <span class="play">Open Notebook Studio →</span>
-        </div>
-      </a>
+      </div>
+    </section>
 
-      <a class="card" href="games/pbr-studio.html">
-        <div class="thumb" style="background:linear-gradient(135deg,#090d1a,#1e3a8a 45%,#f59e0b 95%)">
-          <span class="badge">REAL GPU PBR · WEBGL2 GLSL 300</span>
-          🪖
+    <!-- Real Measured Proof Strip -->
+    <section class="proof-section" id="proof" aria-label="Measured performance proof">
+      <div class="container">
+        <div class="proof-strip">
+          <article class="proof-item">
+            <div class="proof-value accent-cyan">93,449 req/s</div>
+            <div class="proof-label"><code>24.5 KB</code> C11 Control Plane</div>
+          </article>
+          <article class="proof-item">
+            <div class="proof-value accent-emerald">4.2 ms</div>
+            <div class="proof-label">Cold Start (<code>sectium-es</code> / <code>sectium-jvm</code>)</div>
+          </article>
+          <article class="proof-item">
+            <div class="proof-value accent-cyan">37 KB V8</div>
+            <div class="proof-label"><code>bun-neon-v8</code>, <code>dup_v8=0 B</code></div>
+          </article>
+          <article class="proof-item">
+            <div class="proof-value accent-emerald">0 Idle RAM Tax</div>
+            <div class="proof-label"><code>.b8p</code> Warm-RAM Freeze</div>
+          </article>
         </div>
-        <div class="body">
-          <h2>Real GPU PBR 3D Studio</h2>
-          <p>Real photorealistic metallic/roughness PBR, normal maps, ACES tone-mapping, and live skeletal animation (DamagedHelmet, rigged CesiumMan &amp; Fox — zero Three.js).</p>
-          <span class="play">Launch Real GPU PBR →</span>
-        </div>
-      </a>
+      </div>
+    </section>
 
-      <a class="card" href="games/world-composer.html">
-        <div class="thumb" style="background:linear-gradient(135deg,#1e1b4b,#2563eb 50%,#4ade80)">
-          <span class="badge">KIDS 3D BUILDER · CC0 GLB READY</span>
-          🏗️
+    <!-- Interactive 70/30 Verified Savings Calculator -->
+    <section class="section" id="calculator">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-kicker">VERIFIED GAIN-SHARE MODEL</span>
+          <h2>Interactive 70/30 Verified Savings Calculator</h2>
+          <p>
+            Model your real monthly cloud bill against a self-contained <code>b8g-production-rack</code>.
+            You keep <strong>70%</strong> of every verified dollar saved; B8G earns <strong>30%</strong> only when savings are proven.
+          </p>
         </div>
-        <div class="body">
-          <h2>World Composer — Build Your Island</h2>
-          <p>Click to build 3D towns, cars, towers, and heroes — or drag-and-drop any free CC0 .glb model (Kenney / Quaternius / KayKit) right onto the island!</p>
-          <span class="play">Start Building →</span>
-        </div>
-      </a>
 
-      <a class="card" href="games/holonomic-world.html">
-        <div class="thumb" style="background:linear-gradient(135deg,#0f172a,#0284c7 45%,#f97316 85%,#fde047)">
-          <span class="badge">OPEN-WORLD STREAMING · 60 FPS</span>
-          🚤
-        </div>
-        <div class="body">
-          <h2>Holonomic Coast — Open World</h2>
-          <p>Cruise an endless sunset archipelago with neon skylines, islands, bridges, and live predictive sector streaming (press Tab for Engine X-Ray).</p>
-          <span class="play">Launch World →</span>
-        </div>
-      </a>
+        <b8g-savings-calc
+          data-default-spend="10000"
+          data-default-stack="aws-docker-node"
+          data-default-idle="60"
+        ></b8g-savings-calc>
+      </div>
+    </section>
 
-      <a class="card" href="games/sky-drift.html">
-        <div class="thumb sky">
-          <span class="badge">PLAYABLE ARCADE · 60 FPS</span>
-          ✈️
+    <!-- Interactive Pull-on-View Telemetry Viewer -->
+    <section class="section" id="telemetry">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-kicker">ZERO-STORAGE-BLOAT OBSERVABILITY</span>
+          <h2>Pull-on-View Telemetry Viewer</h2>
+          <p class="pull-model-quote">
+            &ldquo;Telemetry stays on YOUR server. We only stream while you view &mdash; or run 1 pull at cycle end for your full report.&rdquo;
+          </p>
         </div>
-        <div class="body">
-          <h2>Sky Drift — Alpine Glider</h2>
-          <p>Soar through painted mountain valleys, sunlit pine forests, and golden sky rings. Mouse, touch, or keyboard controls.</p>
-          <span class="play">Play Now →</span>
-        </div>
-      </a>
 
-      <a class="card" href="games/cozy-village.html">
-        <div class="thumb village">
-          <span class="badge">INTERACTIVE 3D DIORAMA</span>
-          🏔️
-        </div>
-        <div class="body">
-          <h2>Cozy Village — Living Island</h2>
-          <p>Switch between Morning, Golden Sunset, and Starry Night — and click anywhere to launch glowing sky lanterns over the waterfall.</p>
-          <span class="play">Explore Island →</span>
-        </div>
-      </a>
+        <b8g-rack-viewer
+          data-endpoint="/api/rack/metrics"
+          data-report-endpoint="/api/rack/report"
+          data-export-endpoint="/api/rack/export"
+        ></b8g-rack-viewer>
+      </div>
+    </section>
 
-      <a class="card" href="/demos/asog-4dgs.html">
-        <div class="thumb spatial">
-          <span class="badge">4D SPATIAL CAPTURE</span>
-          ✨
+    <!-- Pricing & Offer Tiers -->
+    <section class="section" id="pricing">
+      <div class="container">
+        <div class="section-head">
+          <span class="section-kicker">ALIGNED INCENTIVES</span>
+          <h2>Pricing &amp; Offer Tiers</h2>
+          <p>Start free on your own hardware. Upgrade only when verified savings speak for themselves.</p>
         </div>
-        <div class="body">
-          <h2>4D Park Walk — Spatial Clip</h2>
-          <p>Orbit a live 4D Gaussian scene in 3D space and scrub backward or forward through time.</p>
-          <span class="play">Open 4D Scene →</span>
+
+        <div class="pricing-grid">
+          <article class="pricing-card">
+            <div class="tier-badge">FREE TIER</div>
+            <h3>Self-Hosted Rack</h3>
+            <div class="tier-price">$0 <span class="tier-period">/ forever</span></div>
+            <p class="tier-desc">Full sovereign runtime for your own Linux servers or bare metal.</p>
+            <ul class="tier-list">
+              <li>Self-contained Linux <code>b8g-production-rack</code></li>
+              <li>Local 256-slot ring-buffer telemetry</li>
+              <li>Free Pull-on-View Cloud Viewer</li>
+              <li>1-time Verified Savings &amp; Health Report</li>
+            </ul>
+            <a class="btn btn-outline btn-block" href="#install">Download Free Tarball</a>
+          </article>
+
+          <article class="pricing-card pricing-card-featured">
+            <div class="tier-badge tier-badge-emerald">MOST POPULAR &bull; YOU KEEP 70%</div>
+            <h3>Production Gain-Share</h3>
+            <div class="tier-price">30% <span class="tier-period">of Verified Savings</span></div>
+            <p class="tier-desc">Pay $0 if we don&rsquo;t beat your baseline. Fleet-scale reliability with zero lock-in.</p>
+            <ul class="tier-list">
+              <li><code>RollingReleaseManifest</code> zero-downtime fleet updates</li>
+              <li>Multi-rack mTLS discovery &amp; peer multiplexing</li>
+              <li>Cryptographic Ed25519 instant $O(1)$ rollback</li>
+              <li>Production SLA &amp; automated gain-share audit reports</li>
+            </ul>
+            <a class="btn btn-primary btn-block" href="#calculator">Calculate Your 70% Share</a>
+          </article>
+
+          <article class="pricing-card">
+            <div class="tier-badge tier-badge-cyan">TURNKEY CAPACITY</div>
+            <h3>On-Demand Bare Metal</h3>
+            <div class="tier-price">Pass-Through <span class="tier-period">+ Gain-Share</span></div>
+            <p class="tier-desc">No racks handy? We provision sovereign bare metal in your target region.</p>
+            <ul class="tier-list">
+              <li>Dedicated bare-metal capacity in EU / US / APAC</li>
+              <li>Stamped with your <code>b8g-production-rack</code> in seconds</li>
+              <li>Direct NVMe + 64-byte aligned <code>B8G_ARENA_V1</code></li>
+              <li>Zero hyperscaler egress traps or hypervisor tax</li>
+            </ul>
+            <a class="btn btn-outline btn-block" href="#telemetry">Inspect Live Telemetry</a>
+          </article>
         </div>
-      </a>
-    </div>
+      </div>
+    </section>
   </main>
 
-  <footer>
-    <div>b8g.app — Instant Web &amp; Smart-TV Experiences</div>
-    <div>Powered by <a href="/">Awesome-OS</a></div>
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <span class="brand-mark" aria-hidden="true">B8G</span>
+        <span><strong>b8g.app</strong> &mdash; Sovereign High-Performance Compute for Linux</span>
+      </div>
+      <div class="footer-links">
+        <a href="/install.sh">install.sh</a>
+        <a href="/releases/manifest.json">manifest.json</a>
+        <a href="/api/rack/metrics">/api/rack/metrics</a>
+      </div>
+    </div>
   </footer>
 </body>
 </html>
