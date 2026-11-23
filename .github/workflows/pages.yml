@@ -22,12 +22,32 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Pull Latest Runner-Built Rack Tarballs from awesome-os/b8g-production-rack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p releases
+          gh release download --repo awesome-os/b8g-production-rack --dir releases --clobber
+          node -e "
+            const fs = require('fs');
+            const crypto = require('crypto');
+            const files = fs.readdirSync('releases').filter(f => f.endsWith('.tar.gz') || f.endsWith('.zip')).sort();
+            const entries = {};
+            for (const f of files) {
+              const buf = fs.readFileSync('releases/' + f);
+              const key = f.includes('linux-x64') ? 'linux-x64' : f.includes('linux-arm64') ? 'linux-arm64' : 'win64';
+              entries[key] = { filename: f, bytes: buf.length, sha256: crypto.createHash('sha256').update(buf).digest('hex'), url: '/releases/' + f };
+            }
+            fs.writeFileSync('releases/manifest.json', JSON.stringify({ product: 'b8g-production-rack', targets: entries, ...entries }, null, 2) + '\n');
+          "
       - name: Run b8g.app Verification Suite
         run: node --test b8g-app.test.mts
       - name: Stage Static Site
         run: |
-          mkdir -p _site
+          mkdir -p _site/releases
           cp index.html styles.css viewer.js install.sh install.ps1 favicon.ico _site/
+          cp releases/* _site/releases/
+          if [ -f CNAME ]; then cp CNAME _site/; fi
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
