@@ -37,3 +37,13 @@ Start the server on the default port (`8088`, bound to `127.0.0.1`), or override
 .\bin\b8g-shim.exe node --test www-public-websites/b8g.app/b8g-app.test.mts
 .\bin\b8g-web-doc.ps1 www-public-websites/b8g.app/README.md
 ```
+
+## Quick Install & Run (Windows / Linux / macOS)
+
+```sh
+# Install / hydrate from v11 CAS via holo-pm
+holo-pm install repository://github.com/awesome-os/b8g.app@main
+
+# Or project & run directly via holo-project (0-byte hardlink)
+holo-project "project://cpp/b8g.app?from=repository://github.com/awesome-os/b8g.app@main"
+```
