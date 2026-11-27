@@ -1,7 +1,8 @@
 {
   "schema": "b8g.gh-pages-manifest.v1",
   "repo": "awesome-os/b8g.app",
-  "cname": "b8g.app",
+  "cname": "awesome-os.github.io",
+  "url": "https://awesome-os.github.io/b8g.app/",
   "fileCount": 13,
   "totalBytes": 4781591,
   "skippedLargeFiles": [],
